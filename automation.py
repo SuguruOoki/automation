@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import bz2,os,sys,glob,re,requests,json
+import bz2,os,sys,glob,re,requests,json,datetime
 import csv as csvmodule
 
 class Postal():
@@ -86,10 +86,24 @@ class CsvProcess():
             # print(f)
             # f.close()
 
+    def getDateMonday(date):
+        # date = datetime.date.today()
+        getdate = datetime.datetime.strptime(date, "%Y/%m/%d")
+        day = getdate.weekday()
+
+        if day == 0:
+            return date
+        else:
+            mondaydate = getdate - datetime.timedelta(days=day)
+            return mondaydate.strftime("%Y/%m/%d")
+
+
 if __name__ == '__main__':
+    date = '2017/07/13'
+    print(CsvProcess.getDateMonday(date))
     # Postal.getAdressByPostalCode("164-0014")
-    root_folder = os.getcwd()
-    base_folder = "/master"
-    # print(root_folder)
-    csv = CsvProcess()
-    csv.get_files(root_folder+base_folder)
+    # root_folder = os.getcwd()
+    # base_folder = "/master"
+    # # print(root_folder)
+    # csv = CsvProcess()
+    # csv.get_files(root_folder+base_folder)
