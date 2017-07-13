@@ -86,6 +86,35 @@ class CsvProcess():
             # print(f)
             # f.close()
 
+    def rename_files(self,target_directory):
+        os.chdir(target_directory)
+        files = os.listdir(target_directory)
+        date = datetime.datetime.today().strftime("%Y%m%d")
+
+        for file in files:
+            root, ext = os.path.splitext(file)
+            print(file)
+            if ext == '.csv':
+                # ファイル名の日付が違った場合renameする
+                if "_" in root:
+                    namelist = root.split("_")
+                    # 普通ならnamelistの長さは4となる
+                    if len(namelist) >= 4:
+                        if namelist[3] != date:
+                            namelist[3] = date
+                        if namelist[4] != date:
+                            namelist[4] = date
+
+                else:
+                    print("root:"+root)
+                f = open(file, "r")
+                data = [[str(elm) for elm in v] for v in csvmodule.reader(f)]
+                print(data)
+                print("\n")
+            else:
+                continue
+
+
     def getDateMonday(date):
         # date = datetime.date.today()
         getdate = datetime.datetime.strptime(date, "%Y/%m/%d")
@@ -99,11 +128,12 @@ class CsvProcess():
 
 
 if __name__ == '__main__':
-    date = '2017/07/13'
-    print(CsvProcess.getDateMonday(date))
+    # date = '2017/07/13'
+    # print(CsvProcess.getDateMonday(date))
     # Postal.getAdressByPostalCode("164-0014")
-    # root_folder = os.getcwd()
-    # base_folder = "/master"
+    root_folder = os.getcwd()
+    base_folder = "/master"
     # # print(root_folder)
-    # csv = CsvProcess()
+    csv = CsvProcess()
     # csv.get_files(root_folder+base_folder)
+    csv.rename_files(root_folder+base_folder)
