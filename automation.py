@@ -56,9 +56,11 @@ class CsvProcess():
         for file in files:
             root, ext = os.path.splitext(file)
             print(file)
-            if ext == '.csv':
-                f = open(file, "r")
-                data = [[str(elm) for elm in v] for v in csvmodule.reader(f)]
+            if ext == '.bz2':
+                f = bz2.open(file, "r")
+                # data = [[str(elm) for elm in v] for v in csvmodule.reader(f)]
+                data = [[int(elm) for elm in v] for v in bz2.BZ2File.readlines(f)]
+                print("read!")
                 print(data)
                 print("\n")
 
@@ -94,7 +96,36 @@ class CsvProcess():
         for file in files:
             root, ext = os.path.splitext(file)
             print(file)
-            if ext == '.csv':
+            if ext == '.bz2':
+                # ファイル名の日付が違った場合renameする
+                if "_" in root:
+                    namelist = root.split("_")
+                    # 普通ならnamelistの長さは4となる
+                    if len(namelist) >= 4:
+                        if namelist[3] != date:
+                            namelist[3] = date
+                        if namelist[4] != date:
+                            namelist[4] = date
+
+                else:
+                    print("root:"+root)
+                f = bz2.open(file, "r")
+                # data = [[str(elm) for elm in v] for v in csvmodule.reader(f)]
+                data = [[str(elm) for elm in v] for v in bz2.BZ2File.read(f)]
+                print(data)
+                print("\n")
+            else:
+                continue
+
+
+    def csv_insert_to_array(self,target_directory):
+        os.chdir(target_directory)
+        files = os.listdir(target_directory)
+
+        for file in files:
+            root, ext = os.path.splitext(file)
+            print(file)
+            if ext == '.bz2':
                 # ファイル名の日付が違った場合renameする
                 if "_" in root:
                     namelist = root.split("_")
@@ -132,8 +163,8 @@ if __name__ == '__main__':
     # print(CsvProcess.getDateMonday(date))
     # Postal.getAdressByPostalCode("164-0014")
     root_folder = os.getcwd()
-    base_folder = "/master"
+    base_folder = "/t_townwork"
     # # print(root_folder)
     csv = CsvProcess()
-    # csv.get_files(root_folder+base_folder)
-    csv.rename_files(root_folder+base_folder)
+    csv.get_files(root_folder+base_folder)
+    # csv.rename_files(root_folder+base_folder)
