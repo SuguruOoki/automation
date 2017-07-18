@@ -57,20 +57,23 @@ class CsvProcess():
             root, ext = os.path.splitext(file)
             print(file)
             if ext == '.bz2':
-                f = bz2.open(file, "r")
-                # data = [[str(elm) for elm in v] for v in csvmodule.reader(f)]
-                data = [[int(elm) for elm in v] for v in bz2.BZ2File.readlines(f)]
-                print("read!")
-                print(data)
-                print("\n")
+                # f = bz2.open(file, "r")
+                # # data = [[str(elm) for elm in v] for v in csvmodule.reader(f)]
+                # data = [[int(elm) for elm in v] for v in bz2.BZ2File.readlines(f)]
+                # # data = [[int(elm) for elm in range(10)] for v in bz2.BZ2File.readlines(f)]
+                # print("read!")
+                # print(data)
+                # print("\n")
 
-            # 一行ずつ取得するパターン
-            # with open('some.csv', 'r') as f:
-            #     reader = csv.reader(f)
-            #     header = next(reader)  # ヘッダーを読み飛ばしたい時
-            #
-            #     for row in reader:
-            #         print row          # 1行づつ取得できる
+                # 一行ずつ取得するパターン
+                with bz2.open(file, 'r') as f:
+                    # reader = bz2.BZ2File.readlines(f)
+                    # header = bz2.next(reader)  # ヘッダーを読み飛ばしたい時
+                    data = [[str(elm) for elm in v] for v in bz2.BZ2File.readlines(f)]
+
+                    for row in reader:
+
+                        print(row)          # 1行づつ取得できる
 
             # if ext == '.bz2':
             #     print(os.path.basename(file))
