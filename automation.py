@@ -134,11 +134,6 @@ class FileControl():
 
                 else:
                     print("root:"+root)
-                # f = bz2.open(file, "r")
-                # # data = [[str(elm) for elm in v] for v in csvmodule.reader(f)]
-                # data = [[str(elm) for elm in v] for v in bz2.BZ2File.read(f)]
-                # print(data)
-                # print("\n")
             else:
                 continue
 
