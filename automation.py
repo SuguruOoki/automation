@@ -73,8 +73,30 @@ class ContentsControl():
             return mondaydate.strftime("%Y%m%d")
 
 
+    # target_file(csv)の内容をarrayにinsert
+    def csv_file_insert_to_array(target_file):
+        data = ""
+        # count = 0
+        print(target_file)
+        f = open(target_file, "r")
+        data = [[str(elm) for elm in v] for v in csv.reader(f)]
+        del data[:][36:] # 募集企業名（TWN記載ママ）以降の要素の削除
+        #for w in data:
+            # for t in w:
+            #     if t=="":
+            #         print("空欄です！")
+            #     else:
+            #         print(t)
+            # print('\n')
+            # count += 1
+            # if count == 5:
+            #     break
+        return data
+
+
+
 class FileControl():
-    def file_copy(self,bef, aft):
+    def file_copy(bef, aft):
         shutil.copyfile(bef,aft)
 
     def get_find_all_files(self,target_directory):
@@ -148,17 +170,17 @@ class FileControl():
             print(file)
             if ext == file_extention:
                 # ファイル名の日付が違った場合renameする
-                if "_" in root:
-                    namelist = root.split("_")
-                    # 普通ならnamelistの長さは4となる
-                    if len(namelist) >= 4:
-                        if namelist[3] != date:
-                            namelist[3] = date
-                        if namelist[4] != date:
-                            namelist[4] = date
-
-                else:
-                    print("root:"+root)
+                # if "_" in root:
+                #     namelist = root.split("_")
+                #     # 普通ならnamelistの長さは4となる
+                #     if len(namelist) >= 4:
+                #         if namelist[3] != date:
+                #             namelist[3] = date
+                #         if namelist[4] != date:
+                #             namelist[4] = date
+                #
+                # else:
+                #     print("root:"+root)
                 f = open(file, "r")
                 data = [[str(elm) for elm in v] for v in csvmodule.reader(f)]
                 print(data)
@@ -166,9 +188,10 @@ class FileControl():
             else:
                 continue
 
-
 if __name__ == '__main__':
-    FileControl.file_copy('sample_20170619.txt','sample.csv')
+    target_file = 'sample2.csv'
+    csv_contents = ContentsControl.csv_file_insert_to_array(target_file)
+
     # date = '2017/07/13'
     # print(CsvProcess.getDateMonday(date))
     # Postal.getAdressByPostalCode("164-0014")
