@@ -6,7 +6,7 @@ global file_extention
 file_extention = '.csv'
 
 class Postal():
-    def getAdressByPostalCode(postal_code):
+    def getAdressByPostalCode(self,postal_code):
         url = 'http://geoapi.heartrails.com/api/json'
         postal_code_length = len(re.findall('\d',postal_code))
 
@@ -27,7 +27,7 @@ class Postal():
 
 class ExcelProcess():
     root_folder = os.getcwd()
-    def program():
+    def program(self):
         print("test")
     #  フォルダ内のファイルを全て表示する関数
     def fild_all_files(directory):
@@ -38,7 +38,7 @@ class ExcelProcess():
 
 
 class ContentsControl():
-    def replace_company_name(company):
+    def replace_company_name(self,company):
 
         if "(株)" in company:
             regular_expression = re.compile(r'\(株\)')
@@ -55,13 +55,13 @@ class ContentsControl():
 
         return dst
 
-    def replace_equal(target):
+    def replace_equal(self,target):
         regular_expression = re.compile(r'.=.')
         dst = re.sub(regular_expression, '', target) if "=" in target else target
         return dst
 
     # 取ってきた日付の内容が条件に合わない場合その週の月曜日の日付を取得する
-    def getDateMonday(date):
+    def getDateMonday(self,date):
         # date = datetime.date.today()
         getdate = datetime.datetime.strptime(date, "%Y%m%d")
         day = getdate.weekday()
@@ -74,7 +74,7 @@ class ContentsControl():
 
 
 class FileControl():
-    def file_copy(bef, aft):
+    def file_copy(self,bef, aft):
         shutil.copyfile(bef,aft)
 
     def get_find_all_files(self,target_directory):
@@ -173,7 +173,7 @@ class FileControl():
 
 
 if __name__ == '__main__':
-
+    FileControl.file_copy('sample_20170619.txt','sample.csv')
     # date = '2017/07/13'
     # print(CsvProcess.getDateMonday(date))
     # Postal.getAdressByPostalCode("164-0014")
