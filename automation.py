@@ -55,6 +55,10 @@ class ContentsControl():
 
         return dst
 
+    def replace_equal(target):
+        regular_expression = re.compile(r'.=.')
+        dst = re.sub(regular_expression, '', target) if "=" in target else target
+        return dst
 
     # 取ってきた日付の内容が条件に合わない場合その週の月曜日の日付を取得する
     def getDateMonday(date):
@@ -169,9 +173,7 @@ class FileControl():
 
 
 if __name__ == '__main__':
-    company = 'プログラミング(有)'
-    result = ContentsControl.replace_company_name(company)
-    print(result)
+
     # date = '2017/07/13'
     # print(CsvProcess.getDateMonday(date))
     # Postal.getAdressByPostalCode("164-0014")
