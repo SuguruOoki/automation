@@ -191,7 +191,21 @@ class FileControl():
 if __name__ == '__main__':
     target_file = 'sample2.csv'
     csv_contents = ContentsControl.csv_file_insert_to_array(target_file)
-
+    count = 0
+    for w in csv_contents:
+        count += 1
+        for t in range(0,30):
+            if t == "":
+                print(w)
+                del w
+                print('deleted!\n')
+            elif t == " ":
+                print(w)
+                del w
+                print('deleted!\n')
+            else:
+                # print(count)
+                continue
     # date = '2017/07/13'
     # print(CsvProcess.getDateMonday(date))
     # Postal.getAdressByPostalCode("164-0014")
