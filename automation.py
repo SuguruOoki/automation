@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import bz2,os,sys,glob,re,requests,json,datetime
-import csv as csvmodule
+import bz2,os,sys,glob,re,requests,json,datetime,shutil,csv
+global file_extention
+
+file_extention = '.csv'
 
 class Postal():
     def getAdressByPostalCode(postal_code):
@@ -22,6 +24,7 @@ class Postal():
         print(address)
         return address
 
+
 class ExcelProcess():
     root_folder = os.getcwd()
     def program():
@@ -34,8 +37,43 @@ class ExcelProcess():
                 yield os.path.join(root, file)
 
 
-class CsvProcess():
-    def find_all_files(self,target_directory):
+class ContentsControl():
+    def replace_company_name(company):
+
+        if "(株)" in company:
+            regular_expression = re.compile(r'\(株\)')
+            dst = re.sub(regular_expression, '株式会社',company)
+        elif "（株）" in company:
+            regular_expression = re.compile(r'（株）')
+            dst = re.sub(regular_expression, "株式会社",company)
+        elif "(有)" in company:
+            regular_expression = re.compile(r'\(有\)')
+            dst = re.sub(regular_expression, "有限会社",company)
+        elif "（有）" in company:
+            regular_expression = re.compile(r'（有）')
+            dst = re.sub(regular_expression, "有限会社",company)
+
+        return dst
+
+
+    # 取ってきた日付の内容が条件に合わない場合その週の月曜日の日付を取得する
+    def getDateMonday(date):
+        # date = datetime.date.today()
+        getdate = datetime.datetime.strptime(date, "%Y%m%d")
+        day = getdate.weekday()
+
+        if day == 0:
+            return date
+        else:
+            mondaydate = getdate - datetime.timedelta(days=day)
+            return mondaydate.strftime("%Y%m%d")
+
+
+class FileControl():
+    def file_copy(bef, aft):
+        shutil.copyfile(bef,aft)
+
+    def get_find_all_files(self,target_directory):
         print(directory)
         for root, dirs, files in os.walk(target_directory):
             print(root)
@@ -56,40 +94,20 @@ class CsvProcess():
         for file in files:
             root, ext = os.path.splitext(file)
             print(file)
-            if ext == '.bz2':
-                # f = bz2.open(file, "r")
-                # # data = [[str(elm) for elm in v] for v in csvmodule.reader(f)]
-                # data = [[int(elm) for elm in v] for v in bz2.BZ2File.readlines(f)]
-                # # data = [[int(elm) for elm in range(10)] for v in bz2.BZ2File.readlines(f)]
+            if ext == file_extention:
                 # print("read!")
                 # print(data)
                 # print("\n")
 
                 # 一行ずつ取得するパターン
-                with bz2.open(file, 'r') as f:
+                with csv.open(file, 'r') as f:
                     # reader = bz2.BZ2File.readlines(f)
                     # header = bz2.next(reader)  # ヘッダーを読み飛ばしたい時
-                    data = [[str(elm) for elm in v] for v in bz2.BZ2File.readlines(f)]
+                    data = [[str(elm) for elm in v] for v in csv.reader(f)]
 
-                    for row in reader:
+                    for row in data:
+                        print(row)          # 1行ずつ取得できる
 
-                        print(row)          # 1行づつ取得できる
-
-            # if ext == '.bz2':
-            #     print(os.path.basename(file))
-            #     print(file)
-            #     f = bz2.BZ2File(file).read()
-            # src ="" # これが置き換え用の変数
-            # if "(株)" in src:
-            #     dst = src.replace("(株)", "株式会社")
-            # elif "（株）" in src:
-            #     dst = src.replace("(株)", "株式会社")
-            # elif "(有)" in src:
-            #     dst = src.replace("(有)", "有限会社")
-            # elif "（有）" in src:
-            #     dst = src.replace("(有)", "有限会社")
-            # print(f)
-            # f.close()
 
     def rename_files(self,target_directory):
         os.chdir(target_directory)
@@ -99,7 +117,7 @@ class CsvProcess():
         for file in files:
             root, ext = os.path.splitext(file)
             print(file)
-            if ext == '.bz2':
+            if ext == file_extention:
                 # ファイル名の日付が違った場合renameする
                 if "_" in root:
                     namelist = root.split("_")
@@ -112,15 +130,16 @@ class CsvProcess():
 
                 else:
                     print("root:"+root)
-                f = bz2.open(file, "r")
-                # data = [[str(elm) for elm in v] for v in csvmodule.reader(f)]
-                data = [[str(elm) for elm in v] for v in bz2.BZ2File.read(f)]
-                print(data)
-                print("\n")
+                # f = bz2.open(file, "r")
+                # # data = [[str(elm) for elm in v] for v in csvmodule.reader(f)]
+                # data = [[str(elm) for elm in v] for v in bz2.BZ2File.read(f)]
+                # print(data)
+                # print("\n")
             else:
                 continue
 
 
+    # target_directoryに存在するbz2で圧縮されたcsvの内容をarrayにinsert
     def csv_insert_to_array(self,target_directory):
         os.chdir(target_directory)
         files = os.listdir(target_directory)
@@ -128,7 +147,7 @@ class CsvProcess():
         for file in files:
             root, ext = os.path.splitext(file)
             print(file)
-            if ext == '.bz2':
+            if ext == file_extention:
                 # ファイル名の日付が違った場合renameする
                 if "_" in root:
                     namelist = root.split("_")
@@ -149,25 +168,16 @@ class CsvProcess():
                 continue
 
 
-    def getDateMonday(date):
-        # date = datetime.date.today()
-        getdate = datetime.datetime.strptime(date, "%Y/%m/%d")
-        day = getdate.weekday()
-
-        if day == 0:
-            return date
-        else:
-            mondaydate = getdate - datetime.timedelta(days=day)
-            return mondaydate.strftime("%Y/%m/%d")
-
-
 if __name__ == '__main__':
+    company = 'プログラミング(有)'
+    result = ContentsControl.replace_company_name(company)
+    print(result)
     # date = '2017/07/13'
     # print(CsvProcess.getDateMonday(date))
     # Postal.getAdressByPostalCode("164-0014")
-    root_folder = os.getcwd()
-    base_folder = "/t_townwork"
+    # root_folder = os.getcwd()
+    # base_folder = "/t_townwork"
     # # print(root_folder)
-    csv = CsvProcess()
-    csv.get_files(root_folder+base_folder)
+    # csv = CsvProcess()
+    # csv.get_files(root_folder+base_folder)
     # csv.rename_files(root_folder+base_folder)
