@@ -81,35 +81,17 @@ class ContentsControl():
         f = open(target_file, "r")
         data = [[str(elm) for elm in v] for v in csv.reader(f)]
         del data[:][36:] # 募集企業名（TWN記載ママ）以降の要素の削除
-        #for w in data:
-            # for t in w:
-            #     if t=="":
-            #         print("空欄です！")
-            #     else:
-            #         print(t)
-            # print('\n')
-            # count += 1
-            # if count == 5:
-            #     break
         return data
 
     # からもじ、またはスペースがあった行を削除する関数
     def delete_row(csv_contents,check_column):
-        for w in csv_contents:
-            count += 1
-            # print(w)
-            # print(w[f])
-            if w[f] == "":
-                # print("から文字")
-                # print(w)
-                del w
-                # print('deleted!\n')
-            elif w[f] == " ":
-                # print("スペース")
-                # print(w)
-                del w
-                # print('deleted!\n')
+        for i, row in enumerate(csv_contents):
+            if row[check_column] == "":
+                csv_contents.pop(i)
+            elif row[check_column] == " ":
+                csv_contents.pop(i)
 
+        return csv_contents
 
 
 class FileControl():
@@ -208,8 +190,9 @@ class FileControl():
 
 if __name__ == '__main__':
     target_file = 'sample_20170725.txt'
-    csv_contents = ContentsControl.csv_file_insert_to_array(target_file)
-    count = 0
+    csv_contents = ContentsControl.csv_file_insert_to_array(target_file) # ファイルの内容を配列に入れておく
+    contents = ContentsControl.delete_row(csv_contents,5) # F列(会社名)が空の行を削除する
+    # count = 0
 
         # else:
         #     continue
