@@ -84,14 +84,14 @@ class ContentsControl():
         return data
 
     # からもじ、またはスペースがあった行を削除する関数
-    def delete_row(csv_contents,check_column):
-        for i, row in enumerate(csv_contents):
+    def delete_row(contents, check_column):
+        for i, row in enumerate(contents):
             if row[check_column] == "":
-                csv_contents.pop(i)
+                contents.pop(i)
             elif row[check_column] == " ":
-                csv_contents.pop(i)
+                contents.pop(i)
 
-        return csv_contents
+        return contents
 
 
 class FileControl():
@@ -192,6 +192,7 @@ if __name__ == '__main__':
     target_file = 'sample_20170725.txt'
     csv_contents = ContentsControl.csv_file_insert_to_array(target_file) # ファイルの内容を配列に入れておく
     contents = ContentsControl.delete_row(csv_contents,5) # F列(会社名)が空の行を削除する
+    # contents = ContentsControl.delete_row(contents,5) # K列が空の行を削除する
     # count = 0
 
         # else:
