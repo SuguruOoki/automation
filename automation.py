@@ -5,6 +5,8 @@ global file_extention
 
 file_extention = '.csv'
 
+
+
 class Postal():
     def getAdressByPostalCode(self,postal_code):
         url = 'http://geoapi.heartrails.com/api/json'
@@ -83,6 +85,12 @@ class ContentsControl():
             elif row[check_column] == " ":
                 contents.pop(i)
 
+        return contents
+
+    # 36列目以降を削除する関数
+    def delete_columns(contents,target_column):
+        for i, column in enumerate(contents):
+            del column[target_column:]
         return contents
 
 
@@ -186,9 +194,10 @@ class FileControl():
 if __name__ == '__main__':
     target_file = 'sample_20170725.txt'
     csv_contents = ContentsControl.csv_file_insert_to_array(target_file) # ファイルの内容を配列に入れておく
-    contents = ContentsControl.delete_row(csv_contents,5) # F列(会社名)が空の行を削除する
+    # contents = ContentsControl.delete_row(csv_contents,5) # F列(会社名)が空の行を削除する
     # contents = ContentsControl.delete_row(contents,5) # K列が空の行を削除する
     # count = 0
+    contents = ContentsControl.delete_columns(csv_contents,36) # AK列以降の列を削除する
 
         # else:
         #     continue
