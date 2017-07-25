@@ -3,7 +3,7 @@
 import bz2,os,sys,glob,re,requests,json,datetime,shutil,csv
 global file_extention
 
-file_extention = '.csv'
+file_extention = '.txt'
 
 
 
@@ -29,7 +29,7 @@ class Postal():
 
 
 class ContentsControl():
-    def replace_company_name(self,company):
+    def replace_company_name(company):
 
         if "(株)" in company:
             regular_expression = re.compile(r'\(株\)')
@@ -54,7 +54,7 @@ class ContentsControl():
 
 
     # 取ってきた日付の内容が条件に合わない場合その週の月曜日の日付を取得する
-    def getDateMonday(self,date):
+    def getDateMonday(date):
         # date = datetime.date.today()
         getdate = datetime.datetime.strptime(date, "%Y%m%d")
         day = getdate.weekday()
@@ -86,6 +86,7 @@ class ContentsControl():
                 contents.pop(i)
 
         return contents
+
 
     # 36列目以降を削除する関数
     def delete_columns(contents,target_column):
@@ -137,7 +138,7 @@ class FileControl():
                         print(row)          # 1行ずつ取得できる
 
 
-    def rename_files(self,target_directory):
+    def rename_files(target_directory):
         os.chdir(target_directory)
         files = os.listdir(target_directory)
         date = datetime.datetime.today().strftime("%Y%m%d")
@@ -160,6 +161,21 @@ class FileControl():
                     print("root:"+root)
             else:
                 continue
+
+
+    # ファイル名から日付を取る
+    def get_date_from_file(target_file):
+        root, ext = os.path.splitext(target_file)
+        if ext == file_extention:
+            # ファイル名の日付が違った場合renameする
+            if "_" in root:
+                namelist = root.split("_")
+                # 普通ならnamelistの長さは2となるのでその２番目を日付の文字列として返す
+                return namelist[1]
+            else:
+                return ""
+        else:
+            return ""
 
 
     # target_directoryに存在するbz2で圧縮されたcsvの内容をarrayにinsert
@@ -191,13 +207,15 @@ class FileControl():
                 continue
 
 
+
 if __name__ == '__main__':
     target_file = 'sample_20170725.txt'
-    csv_contents = ContentsControl.csv_file_insert_to_array(target_file) # ファイルの内容を配列に入れておく
+    file_date = FileControl.get_date_from_file(target_file) # ファイルから日付の文字列を取得
+    # csv_contents = ContentsControl.csv_file_insert_to_array(target_file) # ファイルの内容を配列に入れておく
     # contents = ContentsControl.delete_row(csv_contents,5) # F列(会社名)が空の行を削除する
     # contents = ContentsControl.delete_row(contents,5) # K列が空の行を削除する
     # count = 0
-    contents = ContentsControl.delete_columns(csv_contents,36) # AK列以降の列を削除する
+    # contents = ContentsControl.delete_columns(csv_contents, 36) # AK列以降の列を削除する
 
         # else:
         #     continue
