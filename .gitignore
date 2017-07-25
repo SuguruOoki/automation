@@ -1,5 +1,6 @@
 t_townwork/*
 master/*
-sample_20170619.txt
-townwork_20170619.csv
-修正前⇒townwork_20170619.xlsx
+*.txt
+*.csv
+*.xlsx
+

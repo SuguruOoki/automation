@@ -93,6 +93,23 @@ class ContentsControl():
             #     break
         return data
 
+    # からもじ、またはスペースがあった行を削除する関数
+    def delete_row(csv_contents,check_column):
+        for w in csv_contents:
+            count += 1
+            # print(w)
+            # print(w[f])
+            if w[f] == "":
+                # print("から文字")
+                # print(w)
+                del w
+                # print('deleted!\n')
+            elif w[f] == " ":
+                # print("スペース")
+                # print(w)
+                del w
+                # print('deleted!\n')
+
 
 
 class FileControl():
@@ -188,24 +205,15 @@ class FileControl():
             else:
                 continue
 
+
 if __name__ == '__main__':
-    target_file = 'sample2.csv'
+    target_file = 'sample_20170725.txt'
     csv_contents = ContentsControl.csv_file_insert_to_array(target_file)
     count = 0
-    for w in csv_contents:
-        count += 1
-        for t in range(0,30):
-            if t == "":
-                print(w)
-                del w
-                print('deleted!\n')
-            elif t == " ":
-                print(w)
-                del w
-                print('deleted!\n')
-            else:
-                # print(count)
-                continue
+
+        # else:
+        #     continue
+
     # date = '2017/07/13'
     # print(CsvProcess.getDateMonday(date))
     # Postal.getAdressByPostalCode("164-0014")
