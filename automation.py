@@ -103,6 +103,15 @@ class ContentsControl():
         return contents
 
 
+    # Y列がスペースしかなかった場合にそれを空文字列に置換する関数
+    def delete_empty(contents,target_column):
+        for i, column in enumerate(contents):
+            if column[target_column] == " ":
+                column[target_column] = ""
+            elif column[target_column] == "　":
+                column[target_column] = ""
+        return contents
+
 
 class FileControl():
     def file_copy(bef, aft):
