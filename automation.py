@@ -95,6 +95,14 @@ class ContentsControl():
         return contents
 
 
+    # ファイルからとったdateをlistの先頭に挿入
+    def insert_date(contents,date):
+        for i, row in enumerate(contents):
+            row.insert(0,date)
+
+        return contents
+
+
 
 class FileControl():
     def file_copy(bef, aft):
@@ -211,7 +219,8 @@ class FileControl():
 if __name__ == '__main__':
     target_file = 'sample_20170725.txt'
     file_date = FileControl.get_date_from_file(target_file) # ファイルから日付の文字列を取得
-    # csv_contents = ContentsControl.csv_file_insert_to_array(target_file) # ファイルの内容を配列に入れておく
+    csv_contents = ContentsControl.csv_file_insert_to_array(target_file) # ファイルの内容を配列に入れておく
+    ContentsControl.insert_date(csv_contents,file_date)
     # contents = ContentsControl.delete_row(csv_contents,5) # F列(会社名)が空の行を削除する
     # contents = ContentsControl.delete_row(contents,5) # K列が空の行を削除する
     # count = 0
