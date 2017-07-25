@@ -25,17 +25,6 @@ class Postal():
         return address
 
 
-class ExcelProcess():
-    root_folder = os.getcwd()
-    def program(self):
-        print("test")
-    #  フォルダ内のファイルを全て表示する関数
-    def fild_all_files(directory):
-        for root, dirs, files in os.walk(directory):
-            yield root
-            for file in files:
-                yield os.path.join(root, file)
-
 
 class ContentsControl():
     def replace_company_name(self,company):
@@ -55,10 +44,12 @@ class ContentsControl():
 
         return dst
 
+
     def replace_equal(self,target):
         regular_expression = re.compile(r'.=.')
         dst = re.sub(regular_expression, '', target) if "=" in target else target
         return dst
+
 
     # 取ってきた日付の内容が条件に合わない場合その週の月曜日の日付を取得する
     def getDateMonday(self,date):
@@ -83,6 +74,7 @@ class ContentsControl():
         del data[:][36:] # 募集企業名（TWN記載ママ）以降の要素の削除
         return data
 
+
     # からもじ、またはスペースがあった行を削除する関数
     def delete_row(contents, check_column):
         for i, row in enumerate(contents):
@@ -94,9 +86,11 @@ class ContentsControl():
         return contents
 
 
+
 class FileControl():
     def file_copy(bef, aft):
         shutil.copyfile(bef,aft)
+
 
     def get_find_all_files(self,target_directory):
         print(directory)
@@ -112,6 +106,7 @@ class FileControl():
         for file in fild_all_files(root_folder):
             root, ext = os.path.splitext(file)
             print(file)
+
 
     def get_files(self,target_directory):
         os.chdir(target_directory)
