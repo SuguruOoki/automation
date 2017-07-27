@@ -113,12 +113,24 @@ class ContentsControl():
         return contents
 
 
-    def add_color_flg(contents,flg_index):
+
+class AbnormalityDetection():
+    def add_color_flg(contents, flg_index):
         contents_append = contents.append # append関数のキャッシュ
-        
+
         for i, content in enumerate(contents):
             contents_append(true) if i in flg_index else contents_append(false)
         return contents
+
+
+    def detection(contents, detection_index):
+        # address3's index =>
+        color_index = []
+        color_append = color_index.append
+        for i, content in contents:
+            if len(content[detection_index]) < 2:
+                color_append(i)
+        return color_index
 
 
 
