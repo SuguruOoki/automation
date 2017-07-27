@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import bz2,os,sys,glob,re,requests,json,datetime,shutil,csv
+import bz2,os,sys,glob,re,requests,json,datetime,shutil,csv,xlsxwriter
 global file_extention
 
 file_extention = '.txt'
@@ -112,6 +112,20 @@ class ContentsControl():
                 column[target_column] = ""
         return contents
 
+class OutputExcel():
+    def output(output_name, contents):
+        # 新しいファイルとワークシートを作成
+        workbook = xlsxwriter.Workbook('{}.xlsx'.format(output_name))
+        worksheet = workbook.add_worksheet()
+        row = 0
+        col = 0
+        for line in contents:
+            # Write any other lines to the worksheet.
+            for col, t in enumerate(line):
+                worksheet.write(row, col, t)
+            row += 1
+            col = 0
+        workbook.close()
 
 class FileControl():
     def file_copy(bef, aft):
@@ -226,10 +240,12 @@ class FileControl():
 
 
 if __name__ == '__main__':
+
     target_file = 'sample_20170725.txt'
     file_date = FileControl.get_date_from_file(target_file) # ファイルから日付の文字列を取得
     csv_contents = ContentsControl.csv_file_insert_to_array(target_file) # ファイルの内容を配列に入れておく
-    ContentsControl.insert_date(csv_contents,file_date)
+    OutputExcel.output(file_date, csv_contents)
+    # ContentsControl.insert_date(csv_contents,file_date)
     # contents = ContentsControl.delete_row(csv_contents,5) # F列(会社名)が空の行を削除する
     # contents = ContentsControl.delete_row(contents,5) # K列が空の行を削除する
     # count = 0
