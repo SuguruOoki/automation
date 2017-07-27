@@ -123,8 +123,9 @@ class AbnormalityDetection():
         return contents
 
 
-    def detection(contents, detection_index):
+    def address3_detection(contents):
         # address3's index =>
+        detection_index = 5 # 5は仮
         color_index = []
         color_append = color_index.append
         for i, content in contents:
@@ -132,6 +133,19 @@ class AbnormalityDetection():
                 color_append(i)
         return color_index
 
+
+    def postal_code_detection(contents):
+        detection_index = 5 # 5は仮
+        length = len
+        find_all = re.findall
+        for postal_code in contents[detection_index]
+            postal_code_length = length(find_all('\d',postal_code))
+        # 郵便番号のバリデーション
+        if postal_code_length == 7:
+            print("Postal Code is Good!")
+        else:
+            print("Postal Code is Bad!")
+            return ''
 
 
 class OutputExcel():
