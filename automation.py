@@ -112,6 +112,19 @@ class ContentsControl():
                 column[target_column] = ""
         return contents
 
+
+    def add_color_flg(contents,flg_index):
+        contents_append = contents.append # append関数のキャッシュ
+        for i, content in enumerate(contents):
+            for j, t in enumerate(content):
+                if j in flg_index:
+                    contents_append(true)
+                else:
+                    contents_append(false)
+        return contents
+
+
+
 class OutputExcel():
     def output(output_name, contents):
         # 新しいファイルとワークシートを作成
@@ -126,6 +139,8 @@ class OutputExcel():
             row += 1
             col = 0
         workbook.close()
+
+
 
 class FileControl():
     def file_copy(bef, aft):
