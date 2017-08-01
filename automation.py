@@ -67,7 +67,7 @@ class ContentsControl():
 
 
     # target_file(csv)の内容をarrayにinsert
-    def csv_file_insert_to_array(target_file):
+    def csv_file_insert_dataframe(target_file):
         # data = ""
         # count = 0
         print(target_file)
@@ -121,11 +121,11 @@ class ContentsControl():
 
 
 class AbnormalityDetection():
-    def abnormal_detection(data_df):
-        for key, row in data_df.iterrows():
-            print(row)
+    def abnormal_detection(contents):
+        for key, row in contents.iterrows():
+            # print(row)
             print(row['データ取得日'])
-            break
+
 
     def phone_number_detection(num_wrong):
 
@@ -136,8 +136,9 @@ class AbnormalityDetection():
 
 
     def add_color_flg(contents):
-        flg_list = [0] * len(data_df) # 色付け用フラグ列の追加
+        flg_list = [0] * len(contents) # 色付け用フラグ列の追加
         contents['フラグ'] = flg_list
+        return contents
 
 
     def address3_detection(contents):
@@ -169,7 +170,7 @@ class AbnormalityDetection():
         matchOB = re.match(pattern , num_wrong)
         if matchOB:
             print(matchOB.group())
-    
+
 
 class OutputExcel():
     def output(output_name, contents):
@@ -292,12 +293,10 @@ if __name__ == '__main__':
 
     target_file = 'sample_20170725.txt'
     file_date = FileControl.get_date_from_file(target_file) # ファイルから日付の文字列を取得
-    csv_contents = ContentsControl.csv_file_insert_to_array(target_file) # ファイルの内容を配列に入れておく
-    #print(csv_contents[0])
-    flg_index = []
-    csv_contents = AbnormalityDetection.add_color_flg(csv_contents, flg_index)
-    print(csv_contents[0])
-    OutputExcel.output(file_date, csv_contents)
+    csv_contents = ContentsControl.csv_file_insert_dataframe(target_file) # ファイルの内容を配列に入れておく(いらない列は削除済)
+    csv_contents = AbnormalityDetection.add_color_flg(csv_contents)
+    print(csv_contents['郵便番号'])
+    # OutputExcel.output(file_date, csv_contents)
     # ContentsControl.insert_date(csv_contents,file_date)
     # contents = ContentsControl.delete_row(csv_contents,5) # F列(会社名)が空の行を削除する
     # contents = ContentsControl.delete_row(contents,5) # K列が空の行を削除する
