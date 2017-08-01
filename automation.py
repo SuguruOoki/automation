@@ -280,8 +280,8 @@ class FileControl():
             root, ext = os.path.splitext(file)
             print(file)
             if ext == file_extention:
-                target_file = 'sample_20170725.txt'
-                data_df = pd.read_csv(target_file,encoding="utf8", engine="python")
+                # target_file = 'sample_20170725.txt'
+                data_df = pd.read_csv(file,encoding="utf8", engine="python")
                 print(data_df)
                 print("\n")
             else:
