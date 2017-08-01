@@ -288,6 +288,12 @@ class FileControl():
                 continue
 
 
+    def dataframe_to_excel(fileName):
+        writer = pd.ExcelWriter(fileName,engine='xlsxwriter')
+        csv_contents.to_excel(writer)
+        writer.save()
+
+
 
 if __name__ == '__main__':
 
@@ -295,7 +301,10 @@ if __name__ == '__main__':
     file_date = FileControl.get_date_from_file(target_file) # ファイルから日付の文字列を取得
     csv_contents = ContentsControl.csv_file_insert_dataframe(target_file) # ファイルの内容を配列に入れておく(いらない列は削除済)
     csv_contents = AbnormalityDetection.add_color_flg(csv_contents)
-    print(csv_contents['郵便番号'])
+    # print(csv_contents['郵便番号'])
+    count_nan = len(csv_contents['郵便番号']) - csv_contents['郵便番号'].count()
+    print( count_nan,"/",len(csv_contents))
+
     # OutputExcel.output(file_date, csv_contents)
     # ContentsControl.insert_date(csv_contents,file_date)
     # contents = ContentsControl.delete_row(csv_contents,5) # F列(会社名)が空の行を削除する
