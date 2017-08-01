@@ -125,7 +125,7 @@ class AbnormalityDetection():
 
     def address3_detection(contents):
         # address3's index =>
-        detection_index = 5 # 5は仮
+        detection_index = 11 # 住所3は11
         color_index = []
         color_append = color_index.append
         for i, content in contents:
