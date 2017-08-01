@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import bz2,os,sys,glob,re,requests,json,datetime,shutil,csv,xlsxwriter
+import bz2,os,sys,glob,re,requests,json,datetime,shutil,csv,xlsxwriter,pandas as pd
 global file_extention
 
 file_extention = '.txt'
@@ -68,13 +68,21 @@ class ContentsControl():
 
     # target_file(csv)の内容をarrayにinsert
     def csv_file_insert_to_array(target_file):
-        data = ""
+        # data = ""
         # count = 0
         print(target_file)
-        f = open(target_file, "r")
-        data = [[str(elm) for elm in v] for v in csv.reader(f)]
-        del data[:][36:] # 募集企業名（TWN記載ママ）以降の要素の削除
-        return data
+        # f = open(target_file, "r")
+        # data = [[str(elm) for elm in v] for v in csv.reader(f)]
+        data_df = pd.read_csv(target_file,encoding="utf8", engine="python")
+        # data_df.columns
+        columns = data_df.columns
+        print(columns)
+        drop_col = columns[36:]
+        data_df = data_df.drop(drop_col, axis=1)
+        print(data_df.head())
+        exit(1)
+        # del data[:][36:] # 募集企業名（TWN記載ママ）以降の要素の削除
+        return data_df
 
 
     # からもじ、またはスペースがあった行を削除する関数
@@ -115,12 +123,23 @@ class ContentsControl():
 
 
 class AbnormalityDetection():
-    def add_color_flg(contents, flg_index):
-        contents_append = contents.append # append関数のキャッシュ
+    def abnormal_detection(data_df):
+        for key, row in data_df.iterrows():
+            print(row)
+            print(row['データ取得日'])
+            break
 
-        for i, content in enumerate(contents):
-            contents_append(true) if i in flg_index else contents_append(false)
-        return contents
+    def phone_number_detection(num_wrong):
+
+        pattern = r"0\d{1,4}-\d{1,4}-\d{4}"
+        matchOB = re.match(pattern , num_wrong)
+        if matchOB:
+            print(matchOB.group())
+
+
+    def add_color_flg(contents):
+        flg_list = [0] * len(data_df) # 色付け用フラグ列の追加
+        contents['フラグ'] = flg_list
 
 
     def address3_detection(contents):
@@ -248,7 +267,7 @@ class FileControl():
 
 
     # target_directoryに存在するbz2で圧縮されたcsvの内容をarrayにinsert
-    def csv_insert_to_array(self,target_directory):
+    def csv_insert_dataframe(self,target_directory):
         os.chdir(target_directory)
         files = os.listdir(target_directory)
 
@@ -256,21 +275,9 @@ class FileControl():
             root, ext = os.path.splitext(file)
             print(file)
             if ext == file_extention:
-                # ファイル名の日付が違った場合renameする
-                # if "_" in root:
-                #     namelist = root.split("_")
-                #     # 普通ならnamelistの長さは4となる
-                #     if len(namelist) >= 4:
-                #         if namelist[3] != date:
-                #             namelist[3] = date
-                #         if namelist[4] != date:
-                #             namelist[4] = date
-                #
-                # else:
-                #     print("root:"+root)
-                f = open(file, "r")
-                data = [[str(elm) for elm in v] for v in csvmodule.reader(f)]
-                print(data)
+                target_file = 'sample_20170725.txt'
+                data_df = pd.read_csv(target_file,encoding="utf8", engine="python")
+                print(data_df)
                 print("\n")
             else:
                 continue
@@ -282,6 +289,9 @@ if __name__ == '__main__':
     target_file = 'sample_20170725.txt'
     file_date = FileControl.get_date_from_file(target_file) # ファイルから日付の文字列を取得
     csv_contents = ContentsControl.csv_file_insert_to_array(target_file) # ファイルの内容を配列に入れておく
+    #print(csv_contents[0])
+    flg_index = []
+    csv_contents = AbnormalityDetection.add_color_flg(csv_contents, flg_index)
     print(csv_contents[0])
     OutputExcel.output(file_date, csv_contents)
     # ContentsControl.insert_date(csv_contents,file_date)
