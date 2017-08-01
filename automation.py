@@ -135,10 +135,10 @@ class AbnormalityDetection():
 
 
     def postal_code_detection(contents):
-        detection_index = 5 # 5は仮
+        detection_index = 7 # 郵便番号は7
         length = len
         find_all = re.findall
-        for postal_code in contents[detection_index]
+        for postal_code in contents[detection_index]:
             postal_code_length = length(find_all('\d',postal_code))
         # 郵便番号のバリデーション
         if postal_code_length == 7:
@@ -282,6 +282,7 @@ if __name__ == '__main__':
     target_file = 'sample_20170725.txt'
     file_date = FileControl.get_date_from_file(target_file) # ファイルから日付の文字列を取得
     csv_contents = ContentsControl.csv_file_insert_to_array(target_file) # ファイルの内容を配列に入れておく
+    print(csv_contents[0])
     OutputExcel.output(file_date, csv_contents)
     # ContentsControl.insert_date(csv_contents,file_date)
     # contents = ContentsControl.delete_row(csv_contents,5) # F列(会社名)が空の行を削除する
