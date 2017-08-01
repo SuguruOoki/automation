@@ -79,9 +79,7 @@ class ContentsControl():
         print(columns)
         drop_col = columns[36:]
         data_df = data_df.drop(drop_col, axis=1)
-        print(data_df.head())
-        exit(1)
-        # del data[:][36:] # 募集企業名（TWN記載ママ）以降の要素の削除
+        print(data_df.head())# 募集企業名（TWN記載ママ）以降の要素の削除
         return data_df
 
 
@@ -166,6 +164,12 @@ class AbnormalityDetection():
             print("Postal Code is Bad!")
             return ''
 
+    def postal_code_detection2(contents):
+        pattern = r"\d{3}-\d{4}"
+        matchOB = re.match(pattern , num_wrong)
+        if matchOB:
+            print(matchOB.group())
+    
 
 class OutputExcel():
     def output(output_name, contents):
