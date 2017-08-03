@@ -5,6 +5,69 @@ global file_extention
 
 file_extention = '.txt'
 
+import wx
+import sys
+
+file_name = "KEN_ALL.csv"
+
+class MainFrame(wx.Frame):
+    def __init__(self, id, title):
+        width, height = 300, 100
+        wx.Frame.__init__(self, id, title=u"郵便番号から住所を検索",
+                          size=wx.Size(width, height))
+        self.Pan = wx.Panel(self, -1)
+        Hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        Vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        StTxt1 = wx.StaticText(self.Pan, -1, u"郵便番号を入力してください")
+        self.TxtCtrl = wx.TextCtrl(self.Pan, -1, "", size=(200, -1))
+        self.RBtn1 = wx.Button(self.Pan, -1, u"検索")
+        self.RBtn1.Bind(wx.EVT_BUTTON, self.showAddress)
+
+        Vsizer.Add(StTxt1, 0, wx.ALL, 2)
+        Hsizer.Add(self.TxtCtrl, 0, wx.ALL, 2)
+        Hsizer.Add(self.RBtn1,   0, wx.ALL, 2)
+        Vsizer.Add(Hsizer, 0, wx.ALL, 2)
+        self.Pan.SetSizer(Vsizer)
+        Vsizer.Fit(self.Pan)
+
+    def showAddress(self, event):
+        inputZipCode = self.TxtCtrl.GetValue()
+        address = self.getAddress(inputZipCode)
+        if address == "":
+            dlg = wx.MessageDialog(self.Pan, u"データベースには存在しません",
+                                   u"住所の検索結果",
+                                   style=wx.ICON_INFORMATION)
+        else:
+            addr = address.decode(sys.stdin.encoding)
+            dlg = wx.MessageDialog(self.Pan, addr,
+                                   u"住所の検索結果",
+                                   style=wx.ICON_INFORMATION)
+        answer = dlg.ShowModal()
+        if answer == wx.ID_OK:
+            dlg.Destroy()
+
+
+    def getAddress(self, inputZipCode):
+        indata = open(file_name, 'r')
+        dataList = indata.read().splitlines()
+        totalDataNumber = len(dataList)
+        address = ""
+
+        for i in xrange(totalDataNumber):
+            zipCode = dataList[i].split('","')[1]
+            if zipCode == inputZipCode:
+                address = dataList[i].split('","')[5]+\
+                          dataList[i].split('","')[6]+\
+                          dataList[i].split('","')[7].split('"')[0]
+        return address
+
+class Application(wx.App):
+    def OnInit(self):
+        frame = MainFrame(None, -1)
+        frame.Show(True)
+        self.SetTopWindow(frame)
+        return True
 
 
 class Postal():
@@ -304,6 +367,8 @@ if __name__ == '__main__':
     # print(csv_contents['郵便番号'])
     count_nan = len(csv_contents['郵便番号']) - csv_contents['郵便番号'].count()
     print( count_nan,"/",len(csv_contents))
+    app = Application(0)
+    app.MainLoop()
 
     # OutputExcel.output(file_date, csv_contents)
     # ContentsControl.insert_date(csv_contents,file_date)
