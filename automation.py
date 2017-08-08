@@ -48,6 +48,21 @@ class PerlProcess():
         except ValueError:
             logging.error('value error')
 
+    # target_directoryはフルパスでの指定
+    def mdaCheckCnt(target_directory):
+        column_cnt = 0
+        log_file = 'mda_check_cnt.log'
+        # f = open(log_file, "wb") # ログファイルの初期化
+        # f.close()
+
+        # editディレクトリの作成
+        os.chdir(target_directory)
+        args = ['mkdir', 'edited']
+        subprocess.check_call(args);
+
+
+
+
 
 class SearchPostalCode():
 
