@@ -6,26 +6,28 @@ global file_extention
 
 file_extention = '.txt'
 
-class LogCheck():
-    # args = sys.args
-    # target_directory = args[1]
+class PerlProcess():
     def logCheck(target_directory):
-        # try:
-        #     if target_directory:
-        #         check = commands.getoutput("find ./{} -name \"mda_check_cnt.log\" > ./mda_log.log".format(target_directory))
-        # except ValueError:
-        #     logger.error("Not Found Target Directory or mda_check_cnt.log")
-        f = open('mda_log.log', 'r')
-        logfile_list = f.readlines()
-        f.close()
-        pattern1 = re.compile('/TABAITAI/')
-        # logfile_list = [x for x in logfile_list if pattern1.match(x)]
-        pattern1 = '/TABAITAI/'
-        pattern2 = '/corp_asuta/'
-        logfile_list = [x for x in logfile_list if pattern1 in x]
-        # logfile_list = [x for x in logfile_list if pattern2 or pattern in x or if pattern3 in x or in x if pattern4 in x or in x if pattern5 in x or in x if pattern6 in x]
-        logfile_list = [x for x in logfile_list if pattern2 or pattern3 or pattern4 or pattern5 or pattern6 in x]
-        print(logfile_list)
+        log_file = 'mda_log.log'
+        try:
+            if target_directory:
+                check = commands.getoutput("find ./{} -name \"mda_check_cnt.log\" > ./mda_log.log".format(target_directory))
+        except ValueError:
+            logger.error("Not Found Target Directory or mda_check_cnt.log")
+
+        try: # os.path.exists(log_file)
+            f = open(log_file, 'r')
+            logfile_list = f.readlines()
+            f.close()
+            pattern1 = re.compile('/TABAITAI/')
+            pattern1 = '/TABAITAI/'
+            pattern2 = '/corp_asuta/'
+            logfile_list = [x for x in logfile_list if pattern1 in x]
+            logfile_list = [x for x in logfile_list if pattern2 or pattern3 or pattern4 or pattern5 or pattern6 in x]
+            print(logfile_list)
+        except ValueError:
+            logger.error("Not Found {}".format(log_file))
+
 
 
 class SearchPostalCode():
@@ -347,7 +349,6 @@ class FileControl():
 
 
 if __name__ == '__main__':
-    LogCheck.logCheck(os.getcwd())
     # target_file = 'sample_20170725.txt'
     # file_date = FileControl.get_date_from_file(target_file) # ファイルから日付の文字列を取得
     # csv_contents = ContentsControl.csv_file_insert_dataframe(target_file) # ファイルの内容を配列に入れておく(いらない列は削除済)
