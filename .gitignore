@@ -4,4 +4,5 @@ excel/*
 *.txt
 *.csv
 *.xlsx
+*.log
 gpu_lstm_prediction.py
