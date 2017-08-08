@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import bz2,os,sys,glob,re,requests,json,datetime,shutil,csv,xlsxwriter,pandas as pd
-import logging
+import logging,subprocess
 global file_extention
+global excel_extention
+global csv_extention
 
 file_extention = '.txt'
+excel_extention = '.xlsx'
+csv_extention = '.csv'
 
 class PerlProcess():
     def logCheck(target_directory):
@@ -19,15 +23,30 @@ class PerlProcess():
             f = open(log_file, 'r')
             logfile_list = f.readlines()
             f.close()
-            pattern1 = re.compile('/TABAITAI/')
             pattern1 = '/TABAITAI/'
             pattern2 = '/corp_asuta/'
             logfile_list = [x for x in logfile_list if pattern1 in x]
-            logfile_list = [x for x in logfile_list if pattern2 or pattern3 or pattern4 or pattern5 or pattern6 in x]
+            logfile_list = [x for x in logfile_list\
+             if pattern2 or pattern3 or pattern4 or pattern5 or pattern6 in x]
             print(logfile_list)
         except ValueError:
-            logger.error("Not Found {}".format(log_file))
+            logger.error('Not Found {}'.format(log_file))
 
+    # ファイルネームの中に特定の記号が入っていた場合の置き換えを行う関数
+    def renProcess(target_directory):
+        pattern = re.compile(u'[ \[\]\(\)\{\}]')
+        try:
+            files = os.listdir(target_directory)
+            os.chdir(target_directory)
+            for file in files:
+                root, ext = os.path.splitext(file)
+                #print(file)
+                if ext == excel_extention or ext == csv_extention:
+                    ren = pattern.sub(u'', file)
+                    args = ['mv', file, ren]
+                    subprocess.check_call(args);
+        except ValueError:
+            logging.error('value error')
 
 
 class SearchPostalCode():
@@ -36,7 +55,6 @@ class SearchPostalCode():
         postal_code_file_name = "zenkoku.csv"
         postal_code_data = pd.read_csv(postal_code_file_name)
         print(postal_code_data.head())
-        exit(1)
         address = self.getAddress(inputZipCode)
         if address == "":
             dlg = print(u"データベースには存在しません")
@@ -349,6 +367,7 @@ class FileControl():
 
 
 if __name__ == '__main__':
+    PerlProcess.renProcess(os.getcwd())
     # target_file = 'sample_20170725.txt'
     # file_date = FileControl.get_date_from_file(target_file) # ファイルから日付の文字列を取得
     # csv_contents = ContentsControl.csv_file_insert_dataframe(target_file) # ファイルの内容を配列に入れておく(いらない列は削除済)
