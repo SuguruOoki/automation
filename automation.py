@@ -52,15 +52,62 @@ class PerlProcess():
     def mdaCheckCnt(target_directory):
         column_cnt = 0
         log_file = 'mda_check_cnt.log'
+        files = []
         # f = open(log_file, "wb") # ログファイルの初期化
         # f.close()
 
         # editディレクトリの作成
         os.chdir(target_directory)
-        args = ['mkdir', 'edited']
-        subprocess.check_call(args);
+        target_path = target_directory+'/'+'edited'
+        if os.path.exists(target_path):
+            args = ['mkdir', 'edited']
+            subprocess.check_call(args)
+            os.chdir(target_path)
+        else:
+            os.chdir(target_path)
 
+        FileControl.get_find_all_files_name(target_directory,'.csv')
 
+# while(my $dir = readdir(DIR)){
+# 	#next unless(-f $dir);    #この行を有効にすると何故か対象ファイルが処理されない。謎。
+# 	next unless($dir =~ /\.csv/);
+# 	&debug_print(0,$dir);
+#
+# 	open(FILE,$dirname."/".$dir) or die "$!";
+# 	#読み込み回数をカウントする。0のときヘッダ行。
+# 	my $cnt = 0;
+# 	#データ不備の件数をカウントする配列。
+# 	my @error_cnt = (0,0,0,0,0,0,0,0,0);
+# 	@nf = ();
+# 	while(my $line = <FILE>){
+# 		chomp($line);             #読み込んだレコードから改行コードを削除する。
+# 		$line =~ s/^"(.*)"$/$1/g; #先頭末尾のダブルクォーテーションを削除。
+# 		our $record = $line;     #デバッグに使用する。
+# 		$record = "\"".$record."\"\n";
+# 		#読み込んだレコードをカラム毎に分解して配列に格納擦る。
+# 		our @row = split(/","/,$line,-1);
+# 		#ヘッダを取得し、項目ごとに配列に格納する。
+# 		our @header = &get_header(@row) if($cnt==0);
+#
+# 		#データ取得日対応 20170728
+# 		@row = &date_edit($cnt,@row);
+#
+# 		#sub:debug_print の第一引数は制御文字 (1:on/0:off)
+# 		&nf_varidation(@row);
+# 		&debug_print(0,@row) if($cnt==0);
+# 		&debug_print(0,$dir) if($cnt==0);
+# 		&debug_print(0,@header) if($cnt==0);
+# 		&debug_print(0,@row);
+# 		#エラーデータ修正後の編集ファイルを作成する。
+# 		&edit_new($dir,$cnt,@row) if($seigyo);
+#
+# 		#エラーデータを標準出力する。
+# 		&error_list($dir,@row)unless($cnt==0);
+# 		#エラー件数を計上する。
+# 		@error_cnt = &varidation(@error_cnt,$dir,@row) unless($cnt==0);
+# 		$cnt += 1;
+# 	} #while file
+# 	close(FILE);
 
 
 
@@ -279,38 +326,30 @@ class FileControl():
     def file_copy(bef, aft):
         shutil.copyfile(bef,aft)
 
+    def get_find_all_files_name(target_directory, target_extention):
+        files = os.listdir(target_directory)
+        return_files = []
+        for file in files:
+            if not target_extention == '': # target_extentionが空ではない時
+                root, ext = os.path.splitext(file)
+                if ext == target_extention: # target_extentionが一致した時
+                    return_files.append(file)
 
-    def get_find_all_files(self,target_directory):
-        print(directory)
-        for root, dirs, files in os.walk(target_directory):
-            print(root)
-            print(dirs)
-            print(files)
-            yield root
-            for file in files:
-                yield os.path.join(root, file)
-                print(file)
+        if len(return_files) <= 0:
+            return files
+        else:
+            return return_files
 
-        for file in fild_all_files(root_folder):
-            root, ext = os.path.splitext(file)
-            print(file)
-
-
-    def get_files(self,target_directory):
+    # ファイルの内容までを取得する
+    def get_files(target_directory, target_extention=''):
         os.chdir(target_directory)
         files = os.listdir(target_directory)
         for file in files:
             root, ext = os.path.splitext(file)
             print(file)
-            if ext == file_extention:
-                # print("read!")
-                # print(data)
-                # print("\n")
-
+            if ext == target_extention:
                 # 一行ずつ取得するパターン
                 with csv.open(file, 'r') as f:
-                    # reader = bz2.BZ2File.readlines(f)
-                    # header = bz2.next(reader)  # ヘッダーを読み飛ばしたい時
                     data = [[str(elm) for elm in v] for v in csv.reader(f)]
 
                     for row in data:
@@ -382,31 +421,5 @@ class FileControl():
 
 
 if __name__ == '__main__':
-    PerlProcess.renProcess(os.getcwd())
-    # target_file = 'sample_20170725.txt'
-    # file_date = FileControl.get_date_from_file(target_file) # ファイルから日付の文字列を取得
-    # csv_contents = ContentsControl.csv_file_insert_dataframe(target_file) # ファイルの内容を配列に入れておく(いらない列は削除済)
-    # csv_contents = AbnormalityDetection.add_color_flg(csv_contents)
-    # count_nan = len(csv_contents['郵便番号']) - csv_contents['郵便番号'].count()
-    # print( count_nan,"/",len(csv_contents))
-    # SeachPostalCode.showAddress(input_postal_code='164-0014')
-
-    # OutputExcel.output(file_date, csv_contents)
-    # ContentsControl.insert_date(csv_contents,file_date)
-    # contents = ContentsControl.delete_row(csv_contents,5) # F列(会社名)が空の行を削除する
-    # contents = ContentsControl.delete_row(contents,5) # K列が空の行を削除する
-    # count = 0
-    # contents = ContentsControl.delete_columns(csv_contents, 36) # AK列以降の列を削除する
-
-        # else:
-        #     continue
-
-    # date = '2017/07/13'
-    # print(CsvProcess.getDateMonday(date))
-    # Postal.getAdressByPostalCode("164-0014")
-    # root_folder = os.getcwd()
-    # base_folder = "/t_townwork"
-    # # print(root_folder)
-    # csv = CsvProcess()
-    # csv.get_files(root_folder+base_folder)
-    # csv.rename_files(root_folder+base_folder)
+    target = FileControl.get_find_all_files_name(os.getcwd(),'.csv')
+    print(target)

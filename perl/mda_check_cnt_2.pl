@@ -25,6 +25,7 @@ if($dirname =~ /\/$/){
 #ファイルのカラム数をカウントする。
 our @nf;
 #編集ファイルの出力先ディレクトリの作成,修正後ファイルの削除+新規作成を制御する。(1:on/0:off)
+# seugyoってなんだ？数値っぽいが。もしかして整行？
 #my $seigyo = 0;
 my $seigyo = $ARGV[1];
 #logfile の初期化
@@ -42,7 +43,7 @@ opendir(DIR,$dirname) or die "$dirname:$!";
 my $edited_exists = 0;
 	if(-e $dirname.'/edited'){
 		$edited_exists += 1;
-	} # if 
+	} # if
 
 if($seigyo){
 	if($edited_exists == 0){
@@ -53,11 +54,13 @@ if($seigyo){
 	} #if mkdir
 } #if seigyo
 
+# -------------------------------------------------------------------------------
+
 while(my $dir = readdir(DIR)){
 	#next unless(-f $dir);    #この行を有効にすると何故か対象ファイルが処理されない。謎。
 	next unless($dir =~ /\.csv/);
 	&debug_print(0,$dir);
-	
+
 	open(FILE,$dirname."/".$dir) or die "$!";
 	#読み込み回数をカウントする。0のときヘッダ行。
 	my $cnt = 0;
@@ -81,7 +84,7 @@ while(my $dir = readdir(DIR)){
 		&nf_varidation(@row);
 		&debug_print(0,@row) if($cnt==0);
 		&debug_print(0,$dir) if($cnt==0);
-		&debug_print(0,@header) if($cnt==0);		
+		&debug_print(0,@header) if($cnt==0);
 		&debug_print(0,@row);
 		#エラーデータ修正後の編集ファイルを作成する。
 		&edit_new($dir,$cnt,@row) if($seigyo);
@@ -101,7 +104,7 @@ while(my $dir = readdir(DIR)){
 	} #for
 	my $border = '-' x 150;
 	print $border,"\n";
-} #while dir 
+} #while dir
 close(DIR);
 
 #データ取得日調整案件20170728
@@ -109,7 +112,7 @@ close(DIR);
 sub date_edit{
 	my $no = shift(@_);
 	my @input = @_;
-	
+
 	my $start_date = $input[2];
 	my $end_date = $input[26];
 	$start_date =~ s/[^0-9]//g;
@@ -125,7 +128,7 @@ sub date_edit{
 		return @input;
 	}elsif($start_date > $end_date){
 		return @input;
-	} #if 
+	} #if
 
 	my $in_date = $input[26];
 	my $inyear; my $inmonth; my $inday;
@@ -216,7 +219,7 @@ sub nf_varidation{
 				$cnt::nf[$i]->[1] = 1;
 			} #if
 		} #if
-	} #for	
+	} #for
 } #sub nf_varidation
 
 
@@ -234,7 +237,7 @@ sub NF_cnt{
 		return $NF_cnt;
 	} #if
 } #sub NF_cnt
-			
+
 
 #ゼロパディング2桁の通し番号_[ヘッダ項目]の形でヘッダ配列の項目を作成するサブルーチン。
 sub get_header{
@@ -268,13 +271,13 @@ $end_date =~ s/[^0-9]//g;
 	}elsif($start_date > $end_date){
 		$out[0] += 1;
 		print LOGFILE "$dir:post_date_error:$in[0]:start:\"$in[2]\":end\"$in[26]\"\n";
-	} #if 
+	} #if
 
 	if($in[18]=~/[^0-9\,]/){
 		$out[1] += 1;
 		print LOGFILE "$dir:space_data_error:$in[0]:\"$in[18]\"\n";
 	} #if
-	
+
 	#全角文字を扱うときは内部文字コードにデコードしないとテキスト処理が行えない。
 	#また、リクナビ派遣は料金計算にフラグを使用する唯一の媒体。
 	my $rikunabi = Encode::decode('utf8','リクナビ派遣');
@@ -342,13 +345,13 @@ $end_date =~ s/[^0-9]//g;
 		if($in[37] =~ /[^0-9]/){
 			$out[8] += 1;
 			print LOGFILE "$dir:CompNo_error:$in[0]:\"$in[37]\"\n";
-		} #if	
+		} #if
 	}else{
 		$out[8] += 1;
 		print LOGFILE "$dir:undefined_38_CompNo:$in[0]:\"undef\"\n";
 	} #if
 
-close(LOGFILE);		
+close(LOGFILE);
 return @out;
 } # sub varidation
 
@@ -404,7 +407,7 @@ my $border = '-' x 150;
 		print "$dir\n";
 		&print(@in);
 		print $border,"\n";
-	} #if 
+	} #if
 
 	if($in[18]=~/[^0-9\,]/){
 		print "$dir\n";
@@ -460,14 +463,14 @@ my $border = '-' x 150;
 		&print(@in);
 		print $border,"\n";
 	} #if
-	
+
 	if(defined($in[36]) == 1 and defined($in[37]) == 1){
 		if($in[36] =~ /[^0-9]/){
 			print "$dir\n";
 			&print(@in);
 			print $border,"\n";
 		} #if
-	
+
 		if($in[37] =~ /[^0-9]/){
 			print "$dir\n";
 			&print(@in);
@@ -511,7 +514,7 @@ $end_date =~ s/[^0-9]//g;
 		return;
 	}elsif($in[24]=~/[^0-9\,]/ and $media_name eq $rikunabi){
 	#フラグエラーレコードはリクナビ派遣の場合は取込対象外。
-		return; 
+		return;
 #	}elsif($in[24] ne '' and $in[1] ne 'リクナビ派遣'){
 #	#リクナビ派遣以外のフラグエラーレコードはカラムをブランクにして取り込む。
 #		return;
@@ -534,7 +537,7 @@ $end_date =~ s/[^0-9]//g;
 	#住所エラーレコードは取込対象外。
 		return;
 	}elsif($in[7] =~ /\#N\/A/ or $in[8] =~ /\#N\/A/ or $in[9] =~ /\#N\/A/){
-	#住所エラーレコードは取込対象外。	
+	#住所エラーレコードは取込対象外。
 		return;
 	}else{
 		for(my $i=0;$i<@in;$i++){
@@ -554,7 +557,7 @@ $end_date =~ s/[^0-9]//g;
 				}
 			}elsif($i == 24){
 				if($media_name ne $rikunabi and $in[$i] ne ''){
-					splice(@in,$i,1,'');	
+					splice(@in,$i,1,'');
 				}
 			}elsif($i == 36){
 				if($in[$i] =~ /[^0-9]/){
@@ -573,7 +576,7 @@ $end_date =~ s/[^0-9]//g;
 	#	if(defined($b) == 1 and $b != 36){
 	#		$DB::single = 1;
 	#	}
-		
+
 		#20170710 space must be error 対応 start
 		for(my $k=0;$k<@in;$k++){
 			$in[$k] =~ s/"//g;
