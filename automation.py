@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import bz2,os,sys,glob,re,requests,json,datetime,shutil,csv,xlsxwriter,pandas as pd
 import logging,subprocess
+import numpy as np
 global file_extention
 global excel_extention
 global csv_extention
@@ -59,14 +60,47 @@ class PerlProcess():
         # editディレクトリの作成
         os.chdir(target_directory)
         target_path = target_directory+'/'+'edited'
-        if os.path.exists(target_path):
+        if not os.path.exists(target_path):
             args = ['mkdir', 'edited']
             subprocess.check_call(args)
             os.chdir(target_path)
         else:
             os.chdir(target_path)
 
-        FileControl.get_find_all_files_name(target_directory,'.csv')
+        csv_files = FileControl.get_find_all_files_name(target_path,'.csv')
+
+        if csv_files:
+            error_count = [0,0,0,0,0,0,0,0,0]
+            count = 0
+            # csv_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
+            # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
+            # データ取得日の入力などを行う
+            for target_file in csv_files:
+                contents = ContentsControl.csv_file_insert_dataframe(target_file)
+                # なんでかNaNが残っている時があるので念のため。
+                contents = contents.fillna('')
+                # contents = contents.apply(lambda row: contents[co].str.contains('\n') for col in range(len(contents[col].columns)))
+                columns = contents.columns.tolist()
+                for column in columns:
+                    contents[column] = contents[column].astype(str)
+                    contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
+                    contents[column] = contents[column].map(lambda x: x.strip('='))
+                    # contents[column] = contents[column].map(lambda x: x.replace('\*.....',''))
+                print(contents[contents[column].str.contains('=......')])
+                # print(contents[contents['会社名(詳細ページの募集企業名)'].str.contains('.....\＊......')])
+                # print(contents['TEL'].astype(str).apply(lambda x: np.where((len(x)>=10)&set(list(x)).issubset(list('.0123456789')),
+                #                                                       '('+x[:3]+')'+x[3:6]+'-'+x[6:10],
+                #                                                       'Phone number not in record')))
+                # print(contents[contents['TEL'].astype(str).str.extract('+x[:3]+'-'+x[3:6]+'-'+x[6:10])']))
+                #print(asterisk)
+                # データ取得日についての処理を入れる
+                # データ掲載開始日を月曜に直す処理を入れる
+                # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
+                # OutputExcel.dataframe_output('output', contents)
+        else:
+            print('csv files is not found in edited folder!')
+            exit(1)
+
 
 # while(my $dir = readdir(DIR)){
 # 	#next unless(-f $dir);    #この行を有効にすると何故か対象ファイルが処理されない。謎。
@@ -203,16 +237,13 @@ class ContentsControl():
     def csv_file_insert_dataframe(target_file):
         # data = ""
         # count = 0
-        print(target_file)
         # f = open(target_file, "r")
         # data = [[str(elm) for elm in v] for v in csv.reader(f)]
-        data_df = pd.read_csv(target_file,encoding="utf8", engine="python")
+        data_df = pd.read_csv(target_file,encoding="utf8", engine="python", na_values='')
         # data_df.columns
         columns = data_df.columns
-        print(columns)
         drop_col = columns[36:]
         data_df = data_df.drop(drop_col, axis=1)
-        print(data_df.head())# 募集企業名（TWN記載ママ）以降の要素の削除
         return data_df
 
 
@@ -306,19 +337,10 @@ class AbnormalityDetection():
 
 
 class OutputExcel():
-    def output(output_name, contents):
-        # 新しいファイルとワークシートを作成
-        workbook = xlsxwriter.Workbook('{}.xlsx'.format(output_name))
-        worksheet = workbook.add_worksheet()
-        row = 0
-        col = 0
-        for line in contents:
-            # Write any other lines to the worksheet.
-            for col, t in enumerate(line):
-                worksheet.write(row, col, t)
-            row += 1
-            col = 0
-        workbook.close()
+    def dataframe_output(output_name, contents):
+        writer = pd.ExcelWriter('{}.xlsx'.format(output_name), engine='xlsxwriter')
+        contents.to_excel(writer, sheet_name='Sheet1')
+        writer.save()
 
 
 
@@ -421,5 +443,4 @@ class FileControl():
 
 
 if __name__ == '__main__':
-    target = FileControl.get_find_all_files_name(os.getcwd(),'.csv')
-    print(target)
+    target = PerlProcess.mdaCheckCnt(os.getcwd())

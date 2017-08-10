@@ -130,6 +130,10 @@ sub date_edit{
 		return @input;
 	} #if
 
+
+# 月曜にするやつかな？
+# 入力の方法を様々なものから対応するといった処理っぽい。
+# 正直無駄な感じ。
 	my $in_date = $input[26];
 	my $inyear; my $inmonth; my $inday;
 	if($in_date =~ /[0-9]{4}\/[0-9]{1,2}\/[0-9]{1,2}/){
