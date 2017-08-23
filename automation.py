@@ -84,9 +84,8 @@ class PerlProcess():
                 for column in columns:
                     contents[column] = contents[column].astype(str)
                     contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
-                    contents[column] = contents[column].map(lambda x: x.strip('='))
+                    contents[column] = contents[column].map(lambda x: x.strip('=')) # 「=」を削除
                     # contents[column] = contents[column].map(lambda x: x.replace('\*.....',''))
-                print(contents[contents[column].str.contains('=......')])
                 # print(contents[contents['会社名(詳細ページの募集企業名)'].str.contains('.....\＊......')])
                 # print(contents['TEL'].astype(str).apply(lambda x: np.where((len(x)>=10)&set(list(x)).issubset(list('.0123456789')),
                 #                                                       '('+x[:3]+')'+x[3:6]+'-'+x[6:10],
