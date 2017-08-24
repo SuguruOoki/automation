@@ -18,7 +18,7 @@ class PerlProcess():
             if target_directory:
                 check = commands.getoutput("find ./{} -name \"mda_check_cnt.log\" > ./mda_log.log".format(target_directory))
         except ValueError:
-            logger.error("Not Found Target Directory or mda_check_cnt.log")
+            logging.error("Not Found Target Directory or mda_check_cnt.log")
 
         try: # os.path.exists(log_file)
             f = open(log_file, 'r')
@@ -31,7 +31,7 @@ class PerlProcess():
              if pattern2 or pattern3 or pattern4 or pattern5 or pattern6 in x]
             print(logfile_list)
         except ValueError:
-            logger.error('Not Found {}'.format(log_file))
+            logging.error('Not Found {}'.format(log_file))
 
     # ファイルネームの中に特定の記号が入っていた場合の置き換えを行う関数
     def renProcess(target_directory):
@@ -95,7 +95,7 @@ class PerlProcess():
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
-                # OutputExcel.dataframe_output('output', contents)
+                OutputExcel.dataframe_output('output', contents)
         else:
             print('csv files is not found in edited folder!')
             exit(1)
@@ -201,7 +201,7 @@ class ContentsControl():
             return data_df
         except ValueError:
             # 読み込めないということはカラムがおかしいということなので。
-            logger.error("Columns Mistake error")
+            logging.error("Columns Mistake error")
 
 
 
