@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import bz2,os,sys,glob,re,requests,json,datetime,shutil,csv,xlsxwriter,pandas as pd
-import logging,subprocess
+import logging,subprocess,time
 import numpy as np
 global file_extention
 global excel_extention
@@ -59,7 +59,7 @@ class PerlProcess():
 
         # editディレクトリの作成
         os.chdir(target_directory)
-        target_path = target_directory+'/'+'edited'
+        target_path = target_directory # +'/'+'edited'
         if not os.path.exists(target_path):
             args = ['mkdir', 'edited']
             subprocess.check_call(args)
@@ -67,7 +67,7 @@ class PerlProcess():
         else:
             os.chdir(target_path)
 
-        target_files = FileControl.get_find_all_files_name(target_path,'.xlsx')
+        target_files = FileControl.get_find_all_files_name(target_path, excel_extention)
 
         if target_files:
             error_count = [0,0,0,0,0,0,0,0,0]
@@ -76,7 +76,8 @@ class PerlProcess():
             # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
             # データ取得日の入力などを行う
             for target_file in target_files:
-                contents = ContentsControl.csv_file_insert_dataframe(target_file)
+                start = time.time()
+                contents = ContentsControl.excel_file_insert_dataframe(target_file)
                 # なんでかNaNが残っている時があるので念のため。
                 contents = contents.fillna('')
                 # contents = contents.apply(lambda row: contents[co].str.contains('\n') for col in range(len(contents[col].columns)))
@@ -85,17 +86,24 @@ class PerlProcess():
                     contents[column] = contents[column].astype(str)
                     contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
                     contents[column] = contents[column].map(lambda x: x.strip('=')) # 「=」を削除
-                    # contents[column] = contents[column].map(lambda x: x.replace('\*.....',''))
-                # print(contents[contents['会社名(詳細ページの募集企業名)'].str.contains('.....\＊......')])
+
+                    # contents[contents['会社名(詳細ページの募集企業名)'].str.contains('.....\＊......')])
+                    # contents[column] = contents[contents['会社名(詳細ページの募集企業名)'].str.contains('.....\＊......')]
+                    # contents[column] = contents[column].map(lambda x: x.replace('.....\＊......',' '))
+                    # contents[column] = contents[column].map(lambda x: x.replace('.....\*......',' '))
+                # 会社名のところにあるアスタリスク削除を行う。
+                contents['会社名(詳細ページの募集企業名)'] = contents['会社名(詳細ページの募集企業名)'].replace('\＊', ' ', regex=True)
                 # print(contents['TEL'].astype(str).apply(lambda x: np.where((len(x)>=10)&set(list(x)).issubset(list('.0123456789')),
                 #                                                       '('+x[:3]+')'+x[3:6]+'-'+x[6:10],
                 #                                                       'Phone number not in record')))
                 # print(contents[contents['TEL'].astype(str).str.extract('+x[:3]+'-'+x[3:6]+'-'+x[6:10])']))
-                #print(asterisk)
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
+                elapsed_time = time.time() - start
+                print ("読み込み時間:{0}".format(elapsed_time) + "[sec]")
                 OutputExcel.dataframe_output('output', contents)
+
         else:
             print('csv files is not found in edited folder!')
             exit(1)
@@ -192,7 +200,8 @@ class ContentsControl():
     # target_file(csv)の内容をarrayにinsert
     def csv_file_insert_dataframe(target_file):
         try:
-            data_df = pd.read_csv(target_file,encoding="utf8", engine="python", na_values='')
+            print("read!")
+            data_df = pd.read_excel(target_file, encoding="utf8", engine="python", na_values='')
             # data_df.columns
             columns = data_df.columns
             # いらない列の削除
@@ -202,7 +211,30 @@ class ContentsControl():
         except ValueError:
             # 読み込めないということはカラムがおかしいということなので。
             logging.error("Columns Mistake error")
+            exit(1)
 
+    def excel_file_insert_dataframe(target_file):
+        # try:
+        print("read!")
+        print(target_file)
+        # data_df = pd.csv_excel(target_file, encoding="utf8", engine="python", na_values='')
+        # # data_df.columns
+        # columns = data_df.columns
+        # # いらない列の削除
+        # drop_col = columns[36:]
+        # data_df = data_df.drop(drop_col, axis=1)
+        # return data_df
+        df = pd.read_excel(target_file, sheet_name='Sheet1')
+        columns = df.columns
+        drop_col = columns[36:]
+        data_df = df.drop(drop_col, axis=1)
+        return data_df
+
+
+        # except ValueError:
+        # # 読み込めないということはカラムがおかしいということなので。
+        # logging.error("Columns Mistake error")
+        # exit(1)
 
 
     # からもじ、またはスペースがあった行を削除する関数
@@ -296,9 +328,15 @@ class AbnormalityDetection():
 
 class OutputExcel():
     def dataframe_output(output_name, contents):
+        start = time.time()
+        headers = contents.columns
+        print(headers[0])
         writer = pd.ExcelWriter('{}.xlsx'.format(output_name), engine='xlsxwriter')
-        contents.to_excel(writer, sheet_name='Sheet1')
+        contents.to_excel(writer, sheet_name='Sheet1',index=False)
         writer.save()
+        writer.close()
+        elapsed_time = time.time() - start
+        print("描き込み時間:{0}".format(elapsed_time) + "[sec]")
 
 
 
