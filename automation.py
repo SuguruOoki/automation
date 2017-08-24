@@ -86,11 +86,7 @@ class PerlProcess():
                     contents[column] = contents[column].astype(str)
                     contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
                     contents[column] = contents[column].map(lambda x: x.strip('=')) # 「=」を削除
-
-                    # contents[contents['会社名(詳細ページの募集企業名)'].str.contains('.....\＊......')])
-                    # contents[column] = contents[contents['会社名(詳細ページの募集企業名)'].str.contains('.....\＊......')]
-                    # contents[column] = contents[column].map(lambda x: x.replace('.....\＊......',' '))
-                    # contents[column] = contents[column].map(lambda x: x.replace('.....\*......',' '))
+                
                 # 会社名のところにあるアスタリスク削除を行う。
                 contents['会社名(詳細ページの募集企業名)'] = contents['会社名(詳細ページの募集企業名)'].replace('\＊', ' ', regex=True)
                 # print(contents['TEL'].astype(str).apply(lambda x: np.where((len(x)>=10)&set(list(x)).issubset(list('.0123456789')),
