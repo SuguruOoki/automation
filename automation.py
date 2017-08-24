@@ -101,49 +101,6 @@ class PerlProcess():
             exit(1)
 
 
-# while(my $dir = readdir(DIR)){
-# 	#next unless(-f $dir);    #この行を有効にすると何故か対象ファイルが処理されない。謎。
-# 	next unless($dir =~ /\.csv/);
-# 	&debug_print(0,$dir);
-#
-# 	open(FILE,$dirname."/".$dir) or die "$!";
-# 	#読み込み回数をカウントする。0のときヘッダ行。
-# 	my $cnt = 0;
-# 	#データ不備の件数をカウントする配列。
-# 	my @error_cnt = (0,0,0,0,0,0,0,0,0);
-# 	@nf = ();
-# 	while(my $line = <FILE>){
-# 		chomp($line);             #読み込んだレコードから改行コードを削除する。
-# 		$line =~ s/^"(.*)"$/$1/g; #先頭末尾のダブルクォーテーションを削除。
-# 		our $record = $line;     #デバッグに使用する。
-# 		$record = "\"".$record."\"\n";
-# 		#読み込んだレコードをカラム毎に分解して配列に格納擦る。
-# 		our @row = split(/","/,$line,-1);
-# 		#ヘッダを取得し、項目ごとに配列に格納する。
-# 		our @header = &get_header(@row) if($cnt==0);
-#
-# 		#データ取得日対応 20170728
-# 		@row = &date_edit($cnt,@row);
-#
-# 		#sub:debug_print の第一引数は制御文字 (1:on/0:off)
-# 		&nf_varidation(@row);
-# 		&debug_print(0,@row) if($cnt==0);
-# 		&debug_print(0,$dir) if($cnt==0);
-# 		&debug_print(0,@header) if($cnt==0);
-# 		&debug_print(0,@row);
-# 		#エラーデータ修正後の編集ファイルを作成する。
-# 		&edit_new($dir,$cnt,@row) if($seigyo);
-#
-# 		#エラーデータを標準出力する。
-# 		&error_list($dir,@row)unless($cnt==0);
-# 		#エラー件数を計上する。
-# 		@error_cnt = &varidation(@error_cnt,$dir,@row) unless($cnt==0);
-# 		$cnt += 1;
-# 	} #while file
-# 	close(FILE);
-
-
-
 class SearchPostalCode():
 
     def showAddress(self, input_postal_code):

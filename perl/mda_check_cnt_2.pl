@@ -54,7 +54,7 @@ if($seigyo){
 	} #if mkdir
 } #if seigyo
 
-# -------------------------------------------------------------------------------
+
 
 while(my $dir = readdir(DIR)){
 	#next unless(-f $dir);    #この行を有効にすると何故か対象ファイルが処理されない。謎。
@@ -204,7 +204,7 @@ sub date_edit{
 
 }
 
-
+#
 sub nf_varidation{
 	my @in = @_;
 	my $nfcnt = @in;
