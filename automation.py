@@ -67,15 +67,15 @@ class PerlProcess():
         else:
             os.chdir(target_path)
 
-        csv_files = FileControl.get_find_all_files_name(target_path,'.csv')
+        target_files = FileControl.get_find_all_files_name(target_path,'.xlsx')
 
-        if csv_files:
+        if target_files:
             error_count = [0,0,0,0,0,0,0,0,0]
             count = 0
             # csv_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
             # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
             # データ取得日の入力などを行う
-            for target_file in csv_files:
+            for target_file in target_files:
                 contents = ContentsControl.csv_file_insert_dataframe(target_file)
                 # なんでかNaNが残っている時があるので念のため。
                 contents = contents.fillna('')
@@ -191,16 +191,18 @@ class ContentsControl():
 
     # target_file(csv)の内容をarrayにinsert
     def csv_file_insert_dataframe(target_file):
-        # data = ""
-        # count = 0
-        # f = open(target_file, "r")
-        # data = [[str(elm) for elm in v] for v in csv.reader(f)]
-        data_df = pd.read_csv(target_file,encoding="utf8", engine="python", na_values='')
-        # data_df.columns
-        columns = data_df.columns
-        drop_col = columns[36:]
-        data_df = data_df.drop(drop_col, axis=1)
-        return data_df
+        try:
+            data_df = pd.read_csv(target_file,encoding="utf8", engine="python", na_values='')
+            # data_df.columns
+            columns = data_df.columns
+            # いらない列の削除
+            drop_col = columns[36:]
+            data_df = data_df.drop(drop_col, axis=1)
+            return data_df
+        except ValueError:
+            # 読み込めないということはカラムがおかしいということなので。
+            logger.error("Columns Mistake error")
+
 
 
     # からもじ、またはスペースがあった行を削除する関数
