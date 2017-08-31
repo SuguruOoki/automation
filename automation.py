@@ -52,7 +52,7 @@ class PerlProcess():
 
     # target_directoryはフルパスでの指定
     def mdaCheckCnt(target_directory):
-        start = time.time()
+        # start = time.time()
         get_phone_number = ContentsControl.get_tel
         company_name_search = re.compile('会社名*')
         tel_key = 'TEL'
@@ -111,6 +111,7 @@ class PerlProcess():
                 # 電話番号処理
                 contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
                 contents[tel_key] = contents[tel_key].apply(get_phone_number)
+                # print(contents[contents[company_name_key] == ''])
 
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
@@ -118,7 +119,6 @@ class PerlProcess():
                 output_name = target_file.split(".")[0]
                 os.chdir(output_path)
                 OutputExcel.dataframe_output(output_name, contents)
-
         else:
             print('target files is not found in edited folder!')
             exit(1)
@@ -152,7 +152,9 @@ class PerlProcess():
                 # 電話番号の置き換え処理
                 contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
                 contents[tel_key] = contents[tel_key].apply(get_phone_number)
-
+                pd.set_option('display.width', 1)
+                # print(tsv_target_file)
+                # print(len(contents[contents[company_name_key] == '']))
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
@@ -162,8 +164,8 @@ class PerlProcess():
         else:
             print('target files is not found in edited folder!')
             exit(1)
-        elapsed_time = time.time() - start
-        print ("処理時間:{0}".format(elapsed_time) + "[sec]")
+        # elapsed_time = time.time() - start
+        # print ("処理時間:{0}".format(elapsed_time) + "[sec]")
 
 
 class SearchPostalCode():
@@ -278,16 +280,14 @@ class ContentsControl():
 
     def tsv_file_insert_dataframe(target_file):
         try:
-            data_df = pd.read_csv(target_file, encoding="utf8", engine="python", na_values='', delimiter='\t', names=('No', '媒体名', '掲載開始日\n＝データ取得日', '事業内容', '職種',\
-             '会社名(詳細ページの募集企業名)', '郵便番号', '都道府県', '住所1', '住所2', '住所3', 'TEL',\
-             '担当部署', '担当者名', '上場市場', '従業員数', '資本金', '売上高', '広告スペース', '大カテゴリ',\
-             '小カテゴリ', '掲載案件数', '派遣', '紹介', 'フラグ数', 'FAX', 'データ取得日', '版', '企業ホームページ',\
-             '版コード', '広告サイズコード', '最寄り駅', '給与欄', '勤務時間欄', '詳細ページ\u3000キャッチコピー',\
-             '電話番号（TWN記載ママ）'))
-            columns = data_df.columns
-            # いらない列の削除
-            drop_col = columns[36:]
-            data_df = data_df.drop(drop_col, axis=1)
+            header = ['No', '媒体名', '掲載開始日＝データ取得日', '事業内容', '職種','会社名(詳細ページの募集企業名)',
+             '郵便番号', '都道府県', '住所1', '住所2', '住所3', 'TEL','担当部署', '担当者名', '上場市場','従業員数',
+             '資本金', '売上高', '広告スペース', '大カテゴリ','小カテゴリ', '掲載案件数', '派遣', '紹介', 'フラグ数',
+             'FAX', 'データ取得日', '版', '企業ホームページ','版コード', '広告サイズコード', '最寄り駅', '給与欄',
+             '勤務時間欄', '詳細ページ\u3000キャッチコピー','電話番号（TWN記載ママ）']
+            use_cols = range(0,36)
+            data_df = pd.read_csv(target_file, sep='\t', names=header, usecols=use_cols, engine='python', encoding='utf8')
+            print(data_df)
             return data_df
         except ValueError:
             # 読み込めないということはカラムがおかしいということなので。
@@ -393,14 +393,14 @@ class AbnormalityDetection():
 
 class OutputExcel():
     def dataframe_output(output_name, contents):
-        start = time.time()
+        # start = time.time()
         headers = contents.columns
         writer = pd.ExcelWriter('{}.xlsx'.format(output_name), engine='xlsxwriter')
         contents.to_excel(writer, sheet_name='Sheet1',index=False)
         writer.save()
         writer.close()
-        elapsed_time = time.time() - start
-        print("描き込み時間:{0}".format(elapsed_time) + "[sec]")
+        # elapsed_time = time.time() - start
+        # print("描き込み時間:{0}".format(elapsed_time) + "[sec]")
 
 
 
