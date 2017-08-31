@@ -56,6 +56,9 @@ class PerlProcess():
         get_phone_number = ContentsControl.get_tel
         company_name_search = re.compile('会社名*')
         tel_key = 'TEL'
+        postal_code = '郵便番号'
+        address1 = '都道府県'
+        address3 = '住所3'
         column_cnt = 0
         log_file = 'mda_check_cnt.log'
         files = []
@@ -111,7 +114,9 @@ class PerlProcess():
                 # 電話番号処理
                 contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
                 contents[tel_key] = contents[tel_key].apply(get_phone_number)
-                # print(contents[contents[company_name_key] == ''])
+                postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
+                address3_error = contents[contents[address3]==''] # 住所がない
+                tel_error = contents[contents[tel_key]==''] # 電話番号がない
 
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
@@ -119,6 +124,10 @@ class PerlProcess():
                 output_name = target_file.split(".")[0]
                 os.chdir(output_path)
                 OutputExcel.dataframe_output(output_name, contents)
+                os.chdir(error_path)
+                OutputExcel.dataframe_output(output_name+'_address3_error', address3_error)
+                OutputExcel.dataframe_output(output_name+'_postal_code_error', postal_code_error)
+                OutputExcel.dataframe_output(output_name+'_tel_error', tel_error)
         else:
             print('target files is not found in edited folder!')
             exit(1)
@@ -153,14 +162,22 @@ class PerlProcess():
                 contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
                 contents[tel_key] = contents[tel_key].apply(get_phone_number)
                 pd.set_option('display.width', 1)
-                # print(tsv_target_file)
-                # print(len(contents[contents[company_name_key] == '']))
+                postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
+                address3_error = contents[contents[address3]==''] # 住所がない
+                tel_error = contents[contents[tel_key]==''] # 電話番号がない
+                print(len(postal_code_error[postal_code_error[address1] == ''])) # 郵便番号も都道府県もない行の数
+
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
                 os.chdir(output_path)
                 output_name = tsv_target_file.split(".")[0]
                 OutputExcel.dataframe_output(output_name, contents)
+                os.chdir(error_path)
+                OutputExcel.dataframe_output(output_name+'_address3_error', address3_error)
+                OutputExcel.dataframe_output(output_name+'_postal_code_error', postal_code_error)
+                OutputExcel.dataframe_output(output_name+'_tel_error', tel_error)
+
         else:
             print('target files is not found in edited folder!')
             exit(1)
@@ -287,7 +304,6 @@ class ContentsControl():
              '勤務時間欄', '詳細ページ\u3000キャッチコピー','電話番号（TWN記載ママ）']
             use_cols = range(0,36)
             data_df = pd.read_csv(target_file, sep='\t', names=header, usecols=use_cols, engine='python', encoding='utf8')
-            print(data_df)
             return data_df
         except ValueError:
             # 読み込めないということはカラムがおかしいということなので。
