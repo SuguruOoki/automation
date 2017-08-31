@@ -54,6 +54,7 @@ class PerlProcess():
     def mdaCheckCnt(target_directory):
         # start = time.time()
         get_phone_number = ContentsControl.get_tel
+        output_excel = OutputExcel.dataframe_output
         company_name_search = re.compile('会社名*')
         tel_key = 'TEL'
         postal_code = '郵便番号'
@@ -124,12 +125,12 @@ class PerlProcess():
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
                 output_name = target_file.split(".")[0]
                 os.chdir(output_path)
-                OutputExcel.dataframe_output(output_name, contents)
+                output_excel(output_name, contents)
                 os.chdir(error_path)
-                OutputExcel.dataframe_output(output_name+'_address3_error', address3_error)
-                OutputExcel.dataframe_output(output_name+'_postal_code_error', postal_code_error)
-                OutputExcel.dataframe_output(output_name+'_tel_error', tel_error)
-                OutputExcel.dataframe_output(output_name+'_postal_prefecture_error', postal_prefecture_error)
+                output_excel(output_name+'_address3_error', address3_error)
+                output_excel(output_name+'_postal_code_error', postal_code_error)
+                output_excel(output_name+'_tel_error', tel_error)
+                output_excel(output_name+'_postal_prefecture_error', postal_prefecture_error)
         else:
             print('target files is not found in edited folder!')
             exit(1)
@@ -174,12 +175,12 @@ class PerlProcess():
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
                 os.chdir(output_path)
                 output_name = tsv_target_file.split(".")[0]
-                OutputExcel.dataframe_output(output_name, contents)
+                output_excel(output_name, contents)
                 os.chdir(error_path)
-                OutputExcel.dataframe_output(output_name+'_address3_error', address3_error)
-                OutputExcel.dataframe_output(output_name+'_postal_code_error', postal_code_error)
-                OutputExcel.dataframe_output(output_name+'_tel_error', tel_error)
-                OutputExcel.dataframe_output(output_name+'_postal_prefecture_error', postal_prefecture_error)
+                output_excel(output_name+'_address3_error', address3_error)
+                output_excel(output_name+'_postal_code_error', postal_code_error)
+                output_excel(output_name+'_tel_error', tel_error)
+                output_excel(output_name+'_postal_prefecture_error', postal_prefecture_error)
         else:
             print('target files is not found in edited folder!')
             exit(1)
