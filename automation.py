@@ -57,7 +57,7 @@ class PerlProcess():
         company_name_search = re.compile('会社名*')
         tel_key = 'TEL'
         postal_code = '郵便番号'
-        address1 = '都道府県'
+        prefecture = '都道府県'
         address3 = '住所3'
         column_cnt = 0
         log_file = 'mda_check_cnt.log'
@@ -117,6 +117,7 @@ class PerlProcess():
                 postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
                 address3_error = contents[contents[address3]==''] # 住所がない
                 tel_error = contents[contents[tel_key]==''] # 電話番号がない
+                postal_prefecture_error = postal_code_error[postal_code_error[prefecture] == ''])) # 郵便番号も都道府県もない
 
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
@@ -128,6 +129,7 @@ class PerlProcess():
                 OutputExcel.dataframe_output(output_name+'_address3_error', address3_error)
                 OutputExcel.dataframe_output(output_name+'_postal_code_error', postal_code_error)
                 OutputExcel.dataframe_output(output_name+'_tel_error', tel_error)
+                OutputExcel.dataframe_output(output_name+'_postal_prefecture_error', postal_prefecture_error)
         else:
             print('target files is not found in edited folder!')
             exit(1)
@@ -165,7 +167,7 @@ class PerlProcess():
                 postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
                 address3_error = contents[contents[address3]==''] # 住所がない
                 tel_error = contents[contents[tel_key]==''] # 電話番号がない
-                print(len(postal_code_error[postal_code_error[address1] == ''])) # 郵便番号も都道府県もない行の数
+                postal_prefecture_error = postal_code_error[postal_code_error[prefecture] == ''])) # 郵便番号も都道府県もない
 
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
@@ -177,7 +179,7 @@ class PerlProcess():
                 OutputExcel.dataframe_output(output_name+'_address3_error', address3_error)
                 OutputExcel.dataframe_output(output_name+'_postal_code_error', postal_code_error)
                 OutputExcel.dataframe_output(output_name+'_tel_error', tel_error)
-
+                OutputExcel.dataframe_output(output_name+'_postal_prefecture_error', postal_prefecture_error)
         else:
             print('target files is not found in edited folder!')
             exit(1)
