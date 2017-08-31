@@ -103,16 +103,12 @@ class PerlProcess():
                 contents[company_name_key] = contents[company_name_key].replace('（株）', '株式会社', regex=True)
                 contents[company_name_key] = contents[company_name_key].replace('(有)', '有限会社', regex=True)
                 contents[company_name_key] = contents[company_name_key].replace('（有）', '有限会社', regex=True)
-                # print(contents['TEL'].astype(str).apply(lambda x: np.where((len(x)>=10)&set(list(x)).issubset(list('.0123456789')),
-                #                                                       '('+x[:3]+')'+x[3:6]+'-'+x[6:10],
-                #                                                       'Phone number not in record')))
-                # print(contents['TEL'][1])
-                # print(contents['TEL'].astype(str).str.extract('\d{2,4}-\d{2,4}-\d{4}',expand=True))
-                contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
-                print(contents['TEL'].head())
 
-                # tel_list = contents[tel_key].values.tolist()
-                # tel_list = map(lambda x: print(tel_list[x][0]), tel_list)
+                # 電話番号処理
+                contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
+                contents[tel_key] = contents[tel_key].astype(str).str.strip("['']")
+                # print(contents[tel_key][8].str.)
+
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
