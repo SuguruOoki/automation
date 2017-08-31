@@ -117,7 +117,7 @@ class PerlProcess():
                 postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
                 address3_error = contents[contents[address3]==''] # 住所がない
                 tel_error = contents[contents[tel_key]==''] # 電話番号がない
-                postal_prefecture_error = postal_code_error[postal_code_error[prefecture] == ''])) # 郵便番号も都道府県もない
+                postal_prefecture_error = postal_code_error[postal_code_error[prefecture] == ''] # 郵便番号も都道府県もない
 
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
@@ -167,7 +167,7 @@ class PerlProcess():
                 postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
                 address3_error = contents[contents[address3]==''] # 住所がない
                 tel_error = contents[contents[tel_key]==''] # 電話番号がない
-                postal_prefecture_error = postal_code_error[postal_code_error[prefecture] == ''])) # 郵便番号も都道府県もない
+                postal_prefecture_error = postal_code_error[postal_code_error[prefecture] == ''] # 郵便番号も都道府県もない
 
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
