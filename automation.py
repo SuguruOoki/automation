@@ -88,6 +88,7 @@ class PerlProcess():
                 contents = contents.fillna('')
                 columns = contents.columns.tolist()
                 company_name_key = [x for x in columns if company_name_search.match(x)][0]
+                name_replace = contents[company_name_key].replace
                 for column in columns:
                     contents[column] = contents[column].astype(str)
                     contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
@@ -95,12 +96,12 @@ class PerlProcess():
                     contents[column] = contents[column].map(lambda x: x.replace('\n','')) # 「\n」(改行)を削除
 
                 # 会社名のところにあるアスタリスク削除を行う。
-                contents[company_name_key] = contents[company_name_key].replace('\*', ' ', regex=True)
-                contents[company_name_key] = contents[company_name_key].replace('\＊', ' ', regex=True)
-                contents[company_name_key] = contents[company_name_key].replace('(株)', '株式会社', regex=True)
-                contents[company_name_key] = contents[company_name_key].replace('（株）', '株式会社', regex=True)
-                contents[company_name_key] = contents[company_name_key].replace('(有)', '有限会社', regex=True)
-                contents[company_name_key] = contents[company_name_key].replace('（有）', '有限会社', regex=True)
+                contents[company_name_key] = name_replace('\*', ' ', regex=True)
+                contents[company_name_key] = name_replace('\＊', ' ', regex=True)
+                contents[company_name_key] = name_replace('(株)', '株式会社', regex=True)
+                contents[company_name_key] = name_replace('（株）', '株式会社', regex=True)
+                contents[company_name_key] = name_replace('(有)', '有限会社', regex=True)
+                contents[company_name_key] = name_replace('（有）', '有限会社', regex=True)
 
                 # 電話番号処理
                 contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
@@ -125,6 +126,7 @@ class PerlProcess():
                 contents = contents.fillna('')
                 columns = contents.columns.tolist()
                 company_name_key = [x for x in columns if company_name_search.match(x)][0]
+                name_replace = contents[company_name_key].replace
                 for column in columns:
                     contents[column] = contents[column].astype(str)
                     contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
@@ -132,12 +134,12 @@ class PerlProcess():
                     contents[column] = contents[column].map(lambda x: x.replace('\n','')) # 「\n」(改行)を削除
 
                 # 会社名の置き換え処理
-                contents[company_name_key] = contents[company_name_key].replace('\*', ' ', regex=True)
-                contents[company_name_key] = contents[company_name_key].replace('\＊', ' ', regex=True)
-                contents[company_name_key] = contents[company_name_key].replace('(株)', '株式会社', regex=True)
-                contents[company_name_key] = contents[company_name_key].replace('（株）', '株式会社', regex=True)
-                contents[company_name_key] = contents[company_name_key].replace('(有)', '有限会社', regex=True)
-                contents[company_name_key] = contents[company_name_key].replace('（有）', '有限会社', regex=True)
+                contents[company_name_key] = name_replace('\*', ' ', regex=True)
+                contents[company_name_key] = name_replace('\＊', ' ', regex=True)
+                contents[company_name_key] = name_replace('(株)', '株式会社', regex=True)
+                contents[company_name_key] = name_replace('（株）', '株式会社', regex=True)
+                contents[company_name_key] = name_replace('(有)', '有限会社', regex=True)
+                contents[company_name_key] = name_replace('（有）', '有限会社', regex=True)
 
                 # 電話番号の置き換え処理
                 contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{4}')
@@ -146,15 +148,13 @@ class PerlProcess():
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
-                elapsed_time = time.time() - start
-                print ("読み込み時間:{0}".format(elapsed_time) + "[sec]")
                 # OutputExcel.dataframe_output('output', contents)
 
         else:
             print('target files is not found in edited folder!')
             exit(1)
         elapsed_time = time.time() - start
-        print ("読み込み時間:{0}".format(elapsed_time) + "[sec]")
+        print ("処理時間:{0}".format(elapsed_time) + "[sec]")
 
 
 class SearchPostalCode():
@@ -269,8 +269,6 @@ class ContentsControl():
 
     def tsv_file_insert_dataframe(target_file):
         try:
-            print("read!")
-            print(target_file)
             data_df = pd.read_csv(target_file, encoding="utf8", engine="python", na_values='', delimiter='\t', names=('No', '媒体名', '掲載開始日\n＝データ取得日', '事業内容', '職種',\
              '会社名(詳細ページの募集企業名)', '郵便番号', '都道府県', '住所1', '住所2', '住所3', 'TEL',\
              '担当部署', '担当者名', '上場市場', '従業員数', '資本金', '売上高', '広告スペース', '大カテゴリ',\
@@ -388,7 +386,6 @@ class OutputExcel():
     def dataframe_output(output_name, contents):
         start = time.time()
         headers = contents.columns
-        print(headers[0])
         writer = pd.ExcelWriter('{}.xlsx'.format(output_name), engine='xlsxwriter')
         contents.to_excel(writer, sheet_name='Sheet1',index=False)
         writer.save()
