@@ -10,6 +10,7 @@ global csv_extention
 file_extention = '.txt'
 excel_extention = '.xlsx'
 csv_extention = '.csv'
+tsv_extention = '.tsv'
 
 class PerlProcess():
     def logCheck(target_directory):
@@ -51,6 +52,8 @@ class PerlProcess():
 
     # target_directoryはフルパスでの指定
     def mdaCheckCnt(target_directory):
+        company_name_key = '会社名(詳細ページの募集企業名)'
+        tel_key = 'TEL'
         column_cnt = 0
         log_file = 'mda_check_cnt.log'
         files = []
@@ -67,38 +70,64 @@ class PerlProcess():
         else:
             os.chdir(target_path)
 
-        target_files = FileControl.get_find_all_files_name(target_path, excel_extention)
+        print(tsv_extention)
+
+        target_files = FileControl.get_find_all_files_name(target_path, tsv_extention)
+
+        print(target_files)
 
         if target_files:
-            error_count = [0,0,0,0,0,0,0,0,0]
-            count = 0
-            # csv_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
+            # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
             # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
             # データ取得日の入力などを行う
             for target_file in target_files:
                 start = time.time()
-                contents = ContentsControl.excel_file_insert_dataframe(target_file)
+                contents = ContentsControl.tsv_file_insert_dataframe(target_file) # excelファイルをデータフレームにする
                 # なんでかNaNが残っている時があるので念のため。
                 contents = contents.fillna('')
                 # contents = contents.apply(lambda row: contents[co].str.contains('\n') for col in range(len(contents[col].columns)))
                 columns = contents.columns.tolist()
+                print(len(columns))
                 for column in columns:
                     contents[column] = contents[column].astype(str)
                     contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
                     contents[column] = contents[column].map(lambda x: x.strip('=')) # 「=」を削除
-                
+                    contents[column] = contents[column].map(lambda x: x.replace('\n','')) # 「\n」(改行)を削除
+
                 # 会社名のところにあるアスタリスク削除を行う。
-                contents['会社名(詳細ページの募集企業名)'] = contents['会社名(詳細ページの募集企業名)'].replace('\＊', ' ', regex=True)
+                contents[company_name_key] = contents[company_name_key].replace('\*', ' ', regex=True)
+                contents[company_name_key] = contents[company_name_key].replace('\＊', ' ', regex=True)
+                contents[company_name_key] = contents[company_name_key].replace('(株)', '株式会社', regex=True)
+                contents[company_name_key] = contents[company_name_key].replace('（株）', '株式会社', regex=True)
+                contents[company_name_key] = contents[company_name_key].replace('(有)', '有限会社', regex=True)
+                contents[company_name_key] = contents[company_name_key].replace('（有）', '有限会社', regex=True)
+                print(contents['住所3'].head())
                 # print(contents['TEL'].astype(str).apply(lambda x: np.where((len(x)>=10)&set(list(x)).issubset(list('.0123456789')),
                 #                                                       '('+x[:3]+')'+x[3:6]+'-'+x[6:10],
                 #                                                       'Phone number not in record')))
-                # print(contents[contents['TEL'].astype(str).str.extract('+x[:3]+'-'+x[3:6]+'-'+x[6:10])']))
+                # print(contents['TEL'][1])
+                # print(contents['TEL'].astype(str).str.extract('\d{2,4}-\d{2,4}-\d{4}',expand=True))
+                contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{4}')
+                tel_list = contents[tel_key].values.tolist()
+                tel_list = map(lambda x: print(tel_list[x][0]), tel_list)
+
+
+
+                #print(contents[tel_key].str.replace('[',''))
+
+
+                # print(contents['TEL']).str.strip('[')
+
+                # print(contents.to_csv(columns=[tel_key], index=False).replace('\[',''))
+                # print(contents.to_csv(columns=[tel_key], index=False).replace('\]',''))
+
+                exit(1)
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
                 elapsed_time = time.time() - start
                 print ("読み込み時間:{0}".format(elapsed_time) + "[sec]")
-                OutputExcel.dataframe_output('output', contents)
+                # OutputExcel.dataframe_output('output', contents)
 
         else:
             print('csv files is not found in edited folder!')
@@ -174,12 +203,6 @@ class ContentsControl():
         return dst
 
 
-    def replace_equal(self,target):
-        regular_expression = re.compile(r'.=.')
-        dst = re.sub(regular_expression, '', target) if "=" in target else target
-        return dst
-
-
     # 取ってきた日付の内容が条件に合わない場合その週の月曜日の日付を取得する
     def getDateMonday(date):
         # date = datetime.date.today()
@@ -197,7 +220,7 @@ class ContentsControl():
     def csv_file_insert_dataframe(target_file):
         try:
             print("read!")
-            data_df = pd.read_excel(target_file, encoding="utf8", engine="python", na_values='')
+            data_df = pd.read_csv(target_file, encoding="utf8", engine="python", na_values='')
             # data_df.columns
             columns = data_df.columns
             # いらない列の削除
@@ -231,6 +254,23 @@ class ContentsControl():
         # # 読み込めないということはカラムがおかしいということなので。
         # logging.error("Columns Mistake error")
         # exit(1)
+
+
+    def tsv_file_insert_dataframe(target_file):
+        try:
+            print("read!")
+            print(target_file)
+            data_df = pd.read_csv(target_file, encoding="utf8", engine="python", na_values='', delimiter='\t')
+            # data_df.columns
+            columns = data_df.columns
+            # いらない列の削除
+            drop_col = columns[36:]
+            data_df = data_df.drop(drop_col, axis=1)
+            return data_df
+        except ValueError:
+            # 読み込めないということはカラムがおかしいということなので。
+            logging.error("Columns Mistake error")
+            exit(1)
 
 
     # からもじ、またはスペースがあった行を削除する関数

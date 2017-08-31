@@ -3,6 +3,7 @@ master/*
 excel/*
 *.txt
 *.csv
+*.tsv
 *.xlsx
 *.log
 gpu_lstm_prediction.py
