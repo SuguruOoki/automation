@@ -150,7 +150,7 @@ class PerlProcess():
                 contents[company_name_key] = name_replace('（有）', '有限会社', regex=True)
 
                 # 電話番号の置き換え処理
-                contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{4}')
+                contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
                 contents[tel_key] = contents[tel_key].apply(get_phone_number)
 
                 # データ取得日についての処理を入れる
