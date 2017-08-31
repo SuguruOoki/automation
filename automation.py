@@ -52,7 +52,7 @@ class PerlProcess():
 
     # target_directoryはフルパスでの指定
     def mdaCheckCnt(target_directory):
-        company_name_key = '会社名(詳細ページの募集企業名)'
+        company_name_search = re.compile('会社名*')
         tel_key = 'TEL'
         column_cnt = 0
         log_file = 'mda_check_cnt.log'
@@ -62,7 +62,7 @@ class PerlProcess():
 
         # editディレクトリの作成
         os.chdir(target_directory)
-        target_path = target_directory # +'/'+'edited'
+        target_path = target_directory+'/'+'test' # +'/'+'edited'
         if not os.path.exists(target_path):
             args = ['mkdir', 'edited']
             subprocess.check_call(args)
@@ -70,11 +70,11 @@ class PerlProcess():
         else:
             os.chdir(target_path)
 
-        print(tsv_extention)
-
-        target_files = FileControl.get_find_all_files_name(target_path, tsv_extention)
+        target_files = FileControl.get_find_all_files_name(target_path, excel_extention)
+        tsv_target_files = FileControl.get_find_all_files_name(target_path, tsv_extention)
 
         print(target_files)
+        # print(tsv_target_files)
 
         if target_files:
             # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
@@ -82,12 +82,14 @@ class PerlProcess():
             # データ取得日の入力などを行う
             for target_file in target_files:
                 start = time.time()
-                contents = ContentsControl.tsv_file_insert_dataframe(target_file) # excelファイルをデータフレームにする
+                contents = ContentsControl.excel_file_insert_dataframe(target_file) # excelファイルをデータフレームにする
                 # なんでかNaNが残っている時があるので念のため。
                 contents = contents.fillna('')
                 # contents = contents.apply(lambda row: contents[co].str.contains('\n') for col in range(len(contents[col].columns)))
                 columns = contents.columns.tolist()
-                print(len(columns))
+                # print(columns)
+                company_name_key = [x for x in columns if company_name_search.match(x)][0]
+                print(company_name_key)
                 for column in columns:
                     contents[column] = contents[column].astype(str)
                     contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
@@ -101,27 +103,16 @@ class PerlProcess():
                 contents[company_name_key] = contents[company_name_key].replace('（株）', '株式会社', regex=True)
                 contents[company_name_key] = contents[company_name_key].replace('(有)', '有限会社', regex=True)
                 contents[company_name_key] = contents[company_name_key].replace('（有）', '有限会社', regex=True)
-                print(contents['住所3'].head())
                 # print(contents['TEL'].astype(str).apply(lambda x: np.where((len(x)>=10)&set(list(x)).issubset(list('.0123456789')),
                 #                                                       '('+x[:3]+')'+x[3:6]+'-'+x[6:10],
                 #                                                       'Phone number not in record')))
                 # print(contents['TEL'][1])
                 # print(contents['TEL'].astype(str).str.extract('\d{2,4}-\d{2,4}-\d{4}',expand=True))
-                contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{4}')
-                tel_list = contents[tel_key].values.tolist()
-                tel_list = map(lambda x: print(tel_list[x][0]), tel_list)
+                contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
+                print(contents['TEL'].head())
 
-
-
-                #print(contents[tel_key].str.replace('[',''))
-
-
-                # print(contents['TEL']).str.strip('[')
-
-                # print(contents.to_csv(columns=[tel_key], index=False).replace('\[',''))
-                # print(contents.to_csv(columns=[tel_key], index=False).replace('\]',''))
-
-                exit(1)
+                # tel_list = contents[tel_key].values.tolist()
+                # tel_list = map(lambda x: print(tel_list[x][0]), tel_list)
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
@@ -130,8 +121,63 @@ class PerlProcess():
                 # OutputExcel.dataframe_output('output', contents)
 
         else:
-            print('csv files is not found in edited folder!')
+            print('target files is not found in edited folder!')
             exit(1)
+
+        # if tsv_target_files:
+        #     # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
+        #     # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
+        #     # データ取得日の入力などを行う
+        #     for tsv_target_file in tsv_target_files:
+        #         start = time.time()
+        #         contents = ContentsControl.tsv_file_insert_dataframe(tsv_target_file) # excelファイルをデータフレームにする
+        #         # なんでかNaNが残っている時があるので念のため。
+        #         contents = contents.fillna('')
+        #         # contents = contents.apply(lambda row: contents[co].str.contains('\n') for col in range(len(contents[col].columns)))
+        #         columns = contents.columns.tolist()
+        #         company_name_key = [x for x in columns if company_name_search.match(x)][0]
+        #         for column in columns:
+        #             contents[column] = contents[column].astype(str)
+        #             contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
+        #             contents[column] = contents[column].map(lambda x: x.strip('=')) # 「=」を削除
+        #             contents[column] = contents[column].map(lambda x: x.replace('\n','')) # 「\n」(改行)を削除
+        #
+        #         # 会社名のところにあるアスタリスク削除を行う。
+        #         contents[company_name_key] = contents[company_name_key].replace('\*', ' ', regex=True)
+        #         contents[company_name_key] = contents[company_name_key].replace('\＊', ' ', regex=True)
+        #         contents[company_name_key] = contents[company_name_key].replace('(株)', '株式会社', regex=True)
+        #         contents[company_name_key] = contents[company_name_key].replace('（株）', '株式会社', regex=True)
+        #         contents[company_name_key] = contents[company_name_key].replace('(有)', '有限会社', regex=True)
+        #         contents[company_name_key] = contents[company_name_key].replace('（有）', '有限会社', regex=True)
+        #         print(contents['住所3'])
+        #         # print(contents['TEL'].astype(str).apply(lambda x: np.where((len(x)>=10)&set(list(x)).issubset(list('.0123456789')),
+        #         #                                                       '('+x[:3]+')'+x[3:6]+'-'+x[6:10],
+        #         #                                                       'Phone number not in record')))
+        #         # print(contents['TEL'][1])
+        #         # print(contents['TEL'].astype(str).str.extract('\d{2,4}-\d{2,4}-\d{4}',expand=True))
+        #         contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{4}')
+        #         tel_list = contents[tel_key].values.tolist()
+        #         tel_list = map(lambda x: print(tel_list[x][0]), tel_list)
+        #
+        #
+        #
+        #         #print(contents[tel_key].str.replace('[',''))
+        #
+        #
+        #         # print(contents['TEL']).str.strip('[')
+        #
+        #         # print(contents.to_csv(columns=[tel_key], index=False).replace('\[',''))
+        #         # print(contents.to_csv(columns=[tel_key], index=False).replace('\]',''))
+        #         # データ取得日についての処理を入れる
+        #         # データ掲載開始日を月曜に直す処理を入れる
+        #         # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
+        #         elapsed_time = time.time() - start
+        #         print ("読み込み時間:{0}".format(elapsed_time) + "[sec]")
+        #         # OutputExcel.dataframe_output('output', contents)
+        #
+        # else:
+        #     print('target files is not found in edited folder!')
+        #     exit(1)
 
 
 class SearchPostalCode():
@@ -260,8 +306,12 @@ class ContentsControl():
         try:
             print("read!")
             print(target_file)
-            data_df = pd.read_csv(target_file, encoding="utf8", engine="python", na_values='', delimiter='\t')
-            # data_df.columns
+            data_df = pd.read_csv(target_file, encoding="utf8", engine="python", na_values='', delimiter='\t', names=('No', '媒体名', '掲載開始日\n＝データ取得日', '事業内容', '職種',\
+             '会社名(詳細ページの募集企業名)', '郵便番号', '都道府県', '住所1', '住所2', '住所3', 'TEL',\
+             '担当部署', '担当者名', '上場市場', '従業員数', '資本金', '売上高', '広告スペース', '大カテゴリ',\
+             '小カテゴリ', '掲載案件数', '派遣', '紹介', 'フラグ数', 'FAX', 'データ取得日', '版', '企業ホームページ',\
+             '版コード', '広告サイズコード', '最寄り駅', '給与欄', '勤務時間欄', '詳細ページ\u3000キャッチコピー',\
+             '電話番号（TWN記載ママ）'))
             columns = data_df.columns
             # いらない列の削除
             drop_col = columns[36:]
