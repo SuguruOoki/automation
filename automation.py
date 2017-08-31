@@ -157,8 +157,8 @@ class PerlProcess():
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
                 os.chdir(output_path)
+                output_name = tsv_target_file.split(".")
                 OutputExcel.dataframe_output(output_name[0], contents)
-
         else:
             print('target files is not found in edited folder!')
             exit(1)
