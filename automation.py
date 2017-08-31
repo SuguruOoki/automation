@@ -156,7 +156,6 @@ class PerlProcess():
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
-                print(output_name[0])
                 os.chdir(output_path)
                 OutputExcel.dataframe_output(output_name[0], contents)
 
