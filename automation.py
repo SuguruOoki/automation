@@ -52,7 +52,7 @@ class PerlProcess():
 
     # target_directoryはフルパスでの指定
     def mdaCheckCnt(target_directory):
-        contentscontrol = ContentsControl
+        get_phone_number = ContentsControl.get_tel
         company_name_search = re.compile('会社名*')
         tel_key = 'TEL'
         column_cnt = 0
@@ -107,7 +107,7 @@ class PerlProcess():
 
                 # 電話番号処理
                 contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
-                sample = contents[tel_key].apply(contentscontrol.get_tel)
+                sample = contents[tel_key].apply(get_phone_number)
 
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
