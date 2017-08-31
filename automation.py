@@ -110,7 +110,8 @@ class PerlProcess():
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
-                OutputExcel.dataframe_output('output', contents)
+                output_name = target_file.split(".")
+                OutputExcel.dataframe_output(output_name, contents)
 
         else:
             print('target files is not found in edited folder!')
