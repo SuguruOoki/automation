@@ -63,26 +63,31 @@ class PerlProcess():
         # f.close()
 
         # editディレクトリの作成
+        # target_directory => 処理を行うファイルを格納する
+        # output_path => 処理が終わった結果のファイルを格納する
+        # error_path => エラーであった行を取り出したファイルを格納する
+        print(target_directory)
         os.chdir(target_directory)
-        target_path = target_directory+'/'+'test' # +'/'+'edited'
-        if not os.path.exists(target_path):
+        target_path = target_directory+'/'+'test'
+        output_path = target_directory+'/'+'edited'
+        error_path = target_directory+'/'+'error'
+        if not os.path.exists(output_path):
             args = ['mkdir', 'edited']
             subprocess.check_call(args)
-            os.chdir(target_path)
-        else:
-            os.chdir(target_path)
+        if not os.path.exists(error_path):
+            args = ['mkdir', 'error']
+            subprocess.check_call(args)
+        os.chdir(target_path)
 
         target_files = FileControl.get_find_all_files_name(target_path, excel_extention)
         tsv_target_files = FileControl.get_find_all_files_name(target_path, tsv_extention)
-
-        print(target_files)
-        print(tsv_target_files)
 
         if target_files:
             # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
             # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
             # データ取得日の入力などを行う
             for target_file in target_files:
+                os.chdir(target_path)
                 contents = ContentsControl.excel_file_insert_dataframe(target_file) # excelファイルをデータフレームにする
                 # なんでかNaNが残っている時があるので念のため。
                 contents = contents.fillna('')
@@ -111,7 +116,8 @@ class PerlProcess():
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
                 output_name = target_file.split(".")
-                OutputExcel.dataframe_output(output_name, contents)
+                os.chdir(output_path)
+                OutputExcel.dataframe_output(output_name[0], contents)
 
         else:
             print('target files is not found in edited folder!')
@@ -122,6 +128,7 @@ class PerlProcess():
             # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
             # データ取得日の入力などを行う
             for tsv_target_file in tsv_target_files:
+                os.chdir(target_path)
                 contents = ContentsControl.tsv_file_insert_dataframe(tsv_target_file) # excelファイルをデータフレームにする
                 # なんでかNaNが残っている時があるので念のため。
                 contents = contents.fillna('')
@@ -149,7 +156,9 @@ class PerlProcess():
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
-                # OutputExcel.dataframe_output('output', contents)
+                print(output_name[0])
+                os.chdir(output_path)
+                OutputExcel.dataframe_output(output_name[0], contents)
 
         else:
             print('target files is not found in edited folder!')
