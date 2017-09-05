@@ -117,14 +117,19 @@ class PerlProcess():
                 postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
                 address3_error = contents[contents[address3]==''] # 住所がない
                 tel_error = contents[contents[tel_key]==''] # 電話番号がない
-                postal_prefecture_error = postal_code_error[postal_code_error[prefecture] == ''])) # 郵便番号も都道府県もない
+                postal_prefecture_error = postal_code_error[postal_code_error[prefecture] == ''] # 郵便番号も都道府県もない
+
+                # いらない行を削ぎ落として問い合わせを行う行のみを抽出する
+                drop_index = list(set(postal_code_error.index.tolist() + address3_error.index.tolist() + tel_error.index.tolist()))
+                right_contents = contents.drop(drop_index)
 
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
                 output_name = target_file.split(".")[0]
                 os.chdir(output_path)
-                OutputExcel.dataframe_output(output_name, contents)
+                # OutputExcel.dataframe_output(output_name, contents)
+                OutputExcel.dataframe_output(output_name, right_contents)
                 os.chdir(error_path)
                 OutputExcel.dataframe_output(output_name+'_address3_error', address3_error)
                 OutputExcel.dataframe_output(output_name+'_postal_code_error', postal_code_error)
@@ -167,7 +172,11 @@ class PerlProcess():
                 postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
                 address3_error = contents[contents[address3]==''] # 住所がない
                 tel_error = contents[contents[tel_key]==''] # 電話番号がない
-                postal_prefecture_error = postal_code_error[postal_code_error[prefecture] == ''])) # 郵便番号も都道府県もない
+                postal_prefecture_error = postal_code_error[postal_code_error[prefecture] == ''] # 郵便番号も都道府県もない
+
+                # いらない行を削ぎ落として問い合わせを行う行のみを抽出する
+                drop_index = list(set(postal_code_error.index.tolist() + address3_error.index.tolist() + tel_error.index.tolist()))
+                right_contents = contents.drop(drop_index)
 
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
