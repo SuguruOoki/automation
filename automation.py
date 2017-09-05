@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import bz2,os,sys,glob,re,requests,json,datetime,shutil,csv,xlsxwriter,pandas as pd
-import logging,subprocess
+import logging,subprocess,time
 import numpy as np
 global file_extention
 global excel_extention
@@ -10,6 +10,7 @@ global csv_extention
 file_extention = '.txt'
 excel_extention = '.xlsx'
 csv_extention = '.csv'
+tsv_extention = '.tsv'
 
 class PerlProcess():
     def logCheck(target_directory):
@@ -51,6 +52,13 @@ class PerlProcess():
 
     # target_directoryはフルパスでの指定
     def mdaCheckCnt(target_directory):
+        # start = time.time()
+        get_phone_number = ContentsControl.get_tel
+        company_name_search = re.compile('会社名*')
+        tel_key = 'TEL'
+        postal_code = '郵便番号'
+        prefecture = '都道府県'
+        address3 = '住所3'
         column_cnt = 0
         log_file = 'mda_check_cnt.log'
         files = []
@@ -58,48 +66,125 @@ class PerlProcess():
         # f.close()
 
         # editディレクトリの作成
+        # target_directory => 処理を行うファイルを格納する
+        # output_path => 処理が終わった結果のファイルを格納する
+        # error_path => エラーであった行を取り出したファイルを格納する
+        print(target_directory)
         os.chdir(target_directory)
-        target_path = target_directory+'/'+'edited'
-        if not os.path.exists(target_path):
+        target_path = target_directory+'/'+'test'
+        output_path = target_directory+'/'+'edited'
+        error_path = target_directory+'/'+'error'
+        if not os.path.exists(output_path):
             args = ['mkdir', 'edited']
             subprocess.check_call(args)
-            os.chdir(target_path)
-        else:
-            os.chdir(target_path)
+        if not os.path.exists(error_path):
+            args = ['mkdir', 'error']
+            subprocess.check_call(args)
+        os.chdir(target_path)
 
-        csv_files = FileControl.get_find_all_files_name(target_path,'.csv')
+        target_files = FileControl.get_find_all_files_name(target_path, excel_extention)
+        tsv_target_files = FileControl.get_find_all_files_name(target_path, tsv_extention)
 
-        if csv_files:
-            error_count = [0,0,0,0,0,0,0,0,0]
-            count = 0
-            # csv_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
+        if target_files:
+            # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
             # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
             # データ取得日の入力などを行う
-            for target_file in csv_files:
-                contents = ContentsControl.csv_file_insert_dataframe(target_file)
+            for target_file in target_files:
+                os.chdir(target_path)
+                contents = ContentsControl.excel_file_insert_dataframe(target_file) # excelファイルをデータフレームにする
                 # なんでかNaNが残っている時があるので念のため。
                 contents = contents.fillna('')
-                # contents = contents.apply(lambda row: contents[co].str.contains('\n') for col in range(len(contents[col].columns)))
                 columns = contents.columns.tolist()
+                company_name_key = [x for x in columns if company_name_search.match(x)][0]
+                name_replace = contents[company_name_key].replace
                 for column in columns:
                     contents[column] = contents[column].astype(str)
                     contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
-                    contents[column] = contents[column].map(lambda x: x.strip('='))
-                    # contents[column] = contents[column].map(lambda x: x.replace('\*.....',''))
-                print(contents[contents[column].str.contains('=......')])
-                # print(contents[contents['会社名(詳細ページの募集企業名)'].str.contains('.....\＊......')])
-                # print(contents['TEL'].astype(str).apply(lambda x: np.where((len(x)>=10)&set(list(x)).issubset(list('.0123456789')),
-                #                                                       '('+x[:3]+')'+x[3:6]+'-'+x[6:10],
-                #                                                       'Phone number not in record')))
-                # print(contents[contents['TEL'].astype(str).str.extract('+x[:3]+'-'+x[3:6]+'-'+x[6:10])']))
-                #print(asterisk)
+                    contents[column] = contents[column].map(lambda x: x.strip('=')) # 「=」を削除
+                    contents[column] = contents[column].map(lambda x: x.replace('\n','')) # 「\n」(改行)を削除
+
+                # 会社名のところにあるアスタリスク削除を行う。
+                contents[company_name_key] = name_replace('\*', ' ', regex=True)
+                contents[company_name_key] = name_replace('\＊', ' ', regex=True)
+                contents[company_name_key] = name_replace('(株)', '株式会社', regex=True)
+                contents[company_name_key] = name_replace('（株）', '株式会社', regex=True)
+                contents[company_name_key] = name_replace('(有)', '有限会社', regex=True)
+                contents[company_name_key] = name_replace('（有）', '有限会社', regex=True)
+
+                # 電話番号処理
+                contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
+                contents[tel_key] = contents[tel_key].apply(get_phone_number)
+                postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
+                address3_error = contents[contents[address3]==''] # 住所がない
+                tel_error = contents[contents[tel_key]==''] # 電話番号がない
+                postal_prefecture_error = postal_code_error[postal_code_error[prefecture] == ''])) # 郵便番号も都道府県もない
+
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
-                # OutputExcel.dataframe_output('output', contents)
+                output_name = target_file.split(".")[0]
+                os.chdir(output_path)
+                OutputExcel.dataframe_output(output_name, contents)
+                os.chdir(error_path)
+                OutputExcel.dataframe_output(output_name+'_address3_error', address3_error)
+                OutputExcel.dataframe_output(output_name+'_postal_code_error', postal_code_error)
+                OutputExcel.dataframe_output(output_name+'_tel_error', tel_error)
+                OutputExcel.dataframe_output(output_name+'_postal_prefecture_error', postal_prefecture_error)
         else:
-            print('csv files is not found in edited folder!')
+            print('target files is not found in edited folder!')
             exit(1)
+
+        if tsv_target_files:
+            # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
+            # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
+            # データ取得日の入力などを行う
+            for tsv_target_file in tsv_target_files:
+                os.chdir(target_path)
+                contents = ContentsControl.tsv_file_insert_dataframe(tsv_target_file) # excelファイルをデータフレームにする
+                # なんでかNaNが残っている時があるので念のため。
+                contents = contents.fillna('')
+                columns = contents.columns.tolist()
+                company_name_key = [x for x in columns if company_name_search.match(x)][0]
+                name_replace = contents[company_name_key].replace
+                for column in columns:
+                    contents[column] = contents[column].astype(str)
+                    contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
+                    contents[column] = contents[column].map(lambda x: x.strip('=')) # 「=」を削除
+                    contents[column] = contents[column].map(lambda x: x.replace('\n','')) # 「\n」(改行)を削除
+
+                # 会社名の置き換え処理
+                contents[company_name_key] = name_replace('\*', ' ', regex=True)
+                contents[company_name_key] = name_replace('\＊', ' ', regex=True)
+                contents[company_name_key] = name_replace('(株)', '株式会社', regex=True)
+                contents[company_name_key] = name_replace('（株）', '株式会社', regex=True)
+                contents[company_name_key] = name_replace('(有)', '有限会社', regex=True)
+                contents[company_name_key] = name_replace('（有）', '有限会社', regex=True)
+
+                # 電話番号の置き換え処理
+                contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
+                contents[tel_key] = contents[tel_key].apply(get_phone_number)
+                pd.set_option('display.width', 1)
+                postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
+                address3_error = contents[contents[address3]==''] # 住所がない
+                tel_error = contents[contents[tel_key]==''] # 電話番号がない
+                postal_prefecture_error = postal_code_error[postal_code_error[prefecture] == ''])) # 郵便番号も都道府県もない
+
+                # データ取得日についての処理を入れる
+                # データ掲載開始日を月曜に直す処理を入れる
+                # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
+                os.chdir(output_path)
+                output_name = tsv_target_file.split(".")[0]
+                OutputExcel.dataframe_output(output_name, contents)
+                os.chdir(error_path)
+                OutputExcel.dataframe_output(output_name+'_address3_error', address3_error)
+                OutputExcel.dataframe_output(output_name+'_postal_code_error', postal_code_error)
+                OutputExcel.dataframe_output(output_name+'_tel_error', tel_error)
+                OutputExcel.dataframe_output(output_name+'_postal_prefecture_error', postal_prefecture_error)
+        else:
+            print('target files is not found in edited folder!')
+            exit(1)
+        # elapsed_time = time.time() - start
+        # print ("処理時間:{0}".format(elapsed_time) + "[sec]")
 
 
 class SearchPostalCode():
@@ -171,12 +256,6 @@ class ContentsControl():
         return dst
 
 
-    def replace_equal(self,target):
-        regular_expression = re.compile(r'.=.')
-        dst = re.sub(regular_expression, '', target) if "=" in target else target
-        return dst
-
-
     # 取ってきた日付の内容が条件に合わない場合その週の月曜日の日付を取得する
     def getDateMonday(date):
         # date = datetime.date.today()
@@ -192,16 +271,46 @@ class ContentsControl():
 
     # target_file(csv)の内容をarrayにinsert
     def csv_file_insert_dataframe(target_file):
-        # data = ""
-        # count = 0
-        # f = open(target_file, "r")
-        # data = [[str(elm) for elm in v] for v in csv.reader(f)]
-        data_df = pd.read_csv(target_file,encoding="utf8", engine="python", na_values='')
-        # data_df.columns
-        columns = data_df.columns
-        drop_col = columns[36:]
-        data_df = data_df.drop(drop_col, axis=1)
-        return data_df
+        try:
+            data_df = pd.read_csv(target_file, encoding="utf8", engine="python", na_values='')
+            # data_df.columns
+            columns = data_df.columns
+            # いらない列の削除
+            drop_col = columns[36:]
+            data_df = data_df.drop(drop_col, axis=1)
+            return data_df
+        except ValueError:
+            # 読み込めないということはカラムがおかしいということなので。
+            logging.error("csv file : Columns Mistake error")
+            exit(1)
+
+    def excel_file_insert_dataframe(target_file):
+        try:
+            df = pd.read_excel(target_file, sheet_name='Sheet1')
+            columns = df.columns
+            drop_col = columns[36:]
+            data_df = df.drop(drop_col, axis=1)
+            return data_df
+        except ValueError:
+            # 読み込めないということはカラムがおかしいということなので。
+            logging.error("excel file : Columns Mistake error")
+            exit(1)
+
+
+    def tsv_file_insert_dataframe(target_file):
+        try:
+            header = ['No', '媒体名', '掲載開始日＝データ取得日', '事業内容', '職種','会社名(詳細ページの募集企業名)',
+             '郵便番号', '都道府県', '住所1', '住所2', '住所3', 'TEL','担当部署', '担当者名', '上場市場','従業員数',
+             '資本金', '売上高', '広告スペース', '大カテゴリ','小カテゴリ', '掲載案件数', '派遣', '紹介', 'フラグ数',
+             'FAX', 'データ取得日', '版', '企業ホームページ','版コード', '広告サイズコード', '最寄り駅', '給与欄',
+             '勤務時間欄', '詳細ページ\u3000キャッチコピー','電話番号（TWN記載ママ）']
+            use_cols = range(0,36)
+            data_df = pd.read_csv(target_file, sep='\t', names=header, usecols=use_cols, engine='python', encoding='utf8')
+            return data_df
+        except ValueError:
+            # 読み込めないということはカラムがおかしいということなので。
+            logging.error("tsv file : Columns Mistake error")
+            exit(1)
 
 
     # からもじ、またはスペースがあった行を削除する関数
@@ -238,6 +347,13 @@ class ContentsControl():
             elif column[target_column] == "　":
                 column[target_column] = ""
         return contents
+
+    def get_tel(tel_list):
+        if len(tel_list) == 0:
+            return None
+        else:
+            return tel_list[0]
+
 
 
 
@@ -295,9 +411,14 @@ class AbnormalityDetection():
 
 class OutputExcel():
     def dataframe_output(output_name, contents):
+        # start = time.time()
+        headers = contents.columns
         writer = pd.ExcelWriter('{}.xlsx'.format(output_name), engine='xlsxwriter')
-        contents.to_excel(writer, sheet_name='Sheet1')
+        contents.to_excel(writer, sheet_name='Sheet1',index=False)
         writer.save()
+        writer.close()
+        # elapsed_time = time.time() - start
+        # print("描き込み時間:{0}".format(elapsed_time) + "[sec]")
 
 
 
