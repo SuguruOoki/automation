@@ -56,15 +56,13 @@ class PerlProcess():
         get_phone_number = ContentsControl.get_tel
         output_excel = OutputExcel.dataframe_output
         company_name_search = re.compile('会社名*')
+        posting_start_date_search = re.compile('掲載開始日*')
         tel_key = 'TEL'
         postal_code = '郵便番号'
         prefecture = '都道府県'
         address3 = '住所3'
-        column_cnt = 0
         log_file = 'mda_check_cnt.log'
         files = []
-        # f = open(log_file, "wb") # ログファイルの初期化
-        # f.close()
 
         # editディレクトリの作成
         # target_directory => 処理を行うファイルを格納する
@@ -85,6 +83,7 @@ class PerlProcess():
 
         target_files = FileControl.get_find_all_files_name(target_path, excel_extention)
         tsv_target_files = FileControl.get_find_all_files_name(target_path, tsv_extention)
+        inquired_file = FileControl.get_find_all_files_name(target_path, excel_extention) # 問い合わせ済みのファイルを読み込む
 
         if target_files:
             # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
@@ -97,7 +96,11 @@ class PerlProcess():
                 contents = contents.fillna('')
                 columns = contents.columns.tolist()
                 company_name_key = [x for x in columns if company_name_search.match(x)][0]
+                posting_start_date_key = [x for x in columns if posting_start_date_search.match(x)][0]
                 name_replace = contents[company_name_key].replace
+                posting = ContentsControl.getDateMonday(contents[posting_start_date_key][1])
+                output_name_date = posting.replace('/', '')
+
                 for column in columns:
                     contents[column] = contents[column].astype(str)
                     contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
@@ -112,6 +115,10 @@ class PerlProcess():
                 contents[company_name_key] = name_replace('(有)', '有限会社', regex=True)
                 contents[company_name_key] = name_replace('（有）', '有限会社', regex=True)
 
+                if not posting == contents[posting_start_date_key][1]:
+                    contents[posting_start_date_key] = posting
+                    print("changed!")
+
                 # 電話番号処理
                 contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
                 contents[tel_key] = contents[tel_key].apply(get_phone_number)
@@ -120,9 +127,13 @@ class PerlProcess():
                 tel_error = contents[contents[tel_key]==''] # 電話番号がない
                 postal_prefecture_error = postal_code_error[postal_code_error[prefecture] == ''] # 郵便番号も都道府県もない
 
+                # 掲載開始日の取得と修正
+                # ContentsControl.getDateMonday(right_contents[])
+
                 # いらない行を削ぎ落として問い合わせを行う行のみを抽出する
                 drop_index = list(set(postal_code_error.index.tolist() + address3_error.index.tolist() + tel_error.index.tolist()))
                 right_contents = contents.drop(drop_index)
+                contents_length = len(right_contents)
 
                 # データ取得日についての処理を入れる
                 # データ掲載開始日を月曜に直す処理を入れる
@@ -130,7 +141,7 @@ class PerlProcess():
                 output_name = target_file.split(".")[0]
                 os.chdir(output_path)
                 # OutputExcel.dataframe_output(output_name, contents)
-                output_excelt(output_name, right_contents)
+                output_excel(output_name+'_'+str(contents_length)+'_'+output_name_date+'_'+output_name_date, right_contents)
                 os.chdir(error_path)
                 output_excel(output_name+'_address3_error', address3_error)
                 output_excel(output_name+'_postal_code_error', postal_code_error)
@@ -151,7 +162,11 @@ class PerlProcess():
                 contents = contents.fillna('')
                 columns = contents.columns.tolist()
                 company_name_key = [x for x in columns if company_name_search.match(x)][0]
+                posting_start_date_key = [x for x in columns if posting_start_date_search.match(x)][0]
                 name_replace = contents[company_name_key].replace
+                posting = ContentsControl.getDateMonday(contents[posting_start_date_key][2])
+                output_name_date = posting.replace('/', '')
+
                 for column in columns:
                     contents[column] = contents[column].astype(str)
                     contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
@@ -165,6 +180,10 @@ class PerlProcess():
                 contents[company_name_key] = name_replace('（株）', '株式会社', regex=True)
                 contents[company_name_key] = name_replace('(有)', '有限会社', regex=True)
                 contents[company_name_key] = name_replace('（有）', '有限会社', regex=True)
+
+                if not posting == contents[posting_start_date_key][1]:
+                    contents[posting_start_date_key] = posting
+                    print("changed!")
 
                 # 電話番号の置き換え処理
                 contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
@@ -184,7 +203,7 @@ class PerlProcess():
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
                 os.chdir(output_path)
                 output_name = tsv_target_file.split(".")[0]
-                output_excel(output_name, right_contents)
+                output_excel(output_name+'_'+str(contents_length)+'_'+output_name_date+'_'+output_name_date, right_contents)
                 os.chdir(error_path)
                 output_excel(output_name+'_address3_error', address3_error)
                 output_excel(output_name+'_postal_code_error', postal_code_error)
@@ -267,10 +286,11 @@ class ContentsControl():
 
 
     # 取ってきた日付の内容が条件に合わない場合その週の月曜日の日付を取得する
+    # date:str
     def getDateMonday(date):
         # date = datetime.date.today()
-        getdate = datetime.datetime.strptime(date, "%Y%m%d")
-        day = getdate.weekday()
+        get_date = datetime.datetime.strptime(date, "%Y/%m/%d")
+        day = get_date.weekday()
 
         if day == 0:
             return date
