@@ -183,7 +183,7 @@ class PerlProcess():
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
                 os.chdir(output_path)
                 output_name = tsv_target_file.split(".")[0]
-                OutputExcel.dataframe_output(output_name, contents)
+                OutputExcel.dataframe_output(output_name, right_contents)
                 os.chdir(error_path)
                 OutputExcel.dataframe_output(output_name+'_address3_error', address3_error)
                 OutputExcel.dataframe_output(output_name+'_postal_code_error', postal_code_error)
