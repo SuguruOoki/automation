@@ -51,8 +51,8 @@ class PerlProcess():
             logging.error('value error')
 
     # target_directoryはフルパスでの指定
-    def mdaCheckCnt(target_directory):
-        # start = time.time()
+    def mdaCheckCnt(target_directory, media_name):
+        start = time.time()
         get_phone_number = ContentsControl.get_tel
         output_excel = OutputExcel.dataframe_output
         company_name_search = re.compile('会社名*')
@@ -68,11 +68,14 @@ class PerlProcess():
         # target_directory => 処理を行うファイルを格納する
         # output_path => 処理が終わった結果のファイルを格納する
         # error_path => エラーであった行を取り出したファイルを格納する
+        # media_path => メディア毎の問い合わせ済みのファイルを格納しておく
         print(target_directory)
         os.chdir(target_directory)
         target_path = target_directory+'/'+'test'
         output_path = target_directory+'/'+'edited'
         error_path = target_directory+'/'+'error'
+        inquired_path = target_directory+'/'+'inquired'
+
         if not os.path.exists(output_path):
             args = ['mkdir', 'edited']
             subprocess.check_call(args)
@@ -83,8 +86,12 @@ class PerlProcess():
 
         target_files = FileControl.get_find_all_files_name(target_path, excel_extention)
         tsv_target_files = FileControl.get_find_all_files_name(target_path, tsv_extention)
-        inquired_file = FileControl.get_find_all_files_name(target_path, excel_extention) # 問い合わせ済みのファイルを読み込む
+        inquired_dataframe = PerlProcess.inquired_row_to_dataframe(inquired_path, media_name)# 問い合わせ済みのファイルを読み込む
 
+        # print(inquired_dataframe)
+        # elapsed_time = time.time() - start
+        # print ("処理時間:{0}".format(elapsed_time) + "[sec]")
+        exit(1)
         if target_files:
             # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
             # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
@@ -215,6 +222,17 @@ class PerlProcess():
         # elapsed_time = time.time() - start
         # print ("処理時間:{0}".format(elapsed_time) + "[sec]")
 
+    def inquired_row_to_dataframe(target_directory, media_name):
+        inquired_file_search_name = '*' + media_name + '*.*'
+        inquired_file = glob.glob(target_directory+'/'+inquired_file_search_name)
+        if inquired_file:
+            contents = ContentsControl.excel_file_insert_dataframe(inquired_file[0])
+            if 'KEY' in contents.columns:
+                return contents['KEY']
+            else:
+                logging.error('inquired_file don`t have a search key. So we can`t keep processing')
+        else:
+            logging.error('inquired_file is not found')
 
 class SearchPostalCode():
 
@@ -551,4 +569,6 @@ class FileControl():
 
 
 if __name__ == '__main__':
-    target = PerlProcess.mdaCheckCnt(os.getcwd())
+    # args = sys.argv
+    media_name = 'フロムエー' # args[1] # 第一引数は処理を行うメディアの名前
+    target = PerlProcess.mdaCheckCnt(os.getcwd(), media_name)
