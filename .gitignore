@@ -1,6 +1,7 @@
 t_townwork/*
 master/*
 excel/*
+test/*
 *.txt
 *.csv
 *.tsv
