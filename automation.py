@@ -55,6 +55,7 @@ class PerlProcess():
         # start = time.time()
         get_phone_number = ContentsControl.get_tel
         output_excel = OutputExcel.dataframe_output
+        contentscontrol = ContentsControl
         company_name_search = re.compile('会社名*')
         posting_start_date_search = re.compile('掲載開始日*')
         tel_key = 'TEL'
@@ -111,23 +112,14 @@ class PerlProcess():
                 company_name_key = [x for x in columns if company_name_search.match(x)][0]
                 posting_start_date_key = [x for x in columns if posting_start_date_search.match(x)][0]
                 contents = pd.concat([contents, inquired_dataframe]).drop_duplicates(subset=[prefecture_key, address1_key, address2_key, address3_key], keep=False)
-                name_replace = contents[company_name_key].replace
                 posting = ContentsControl.getDateMonday(contents[posting_start_date_key][1])
                 output_name_date = posting.replace('/', '')
 
-                for column in columns:
-                    contents[column] = contents[column].astype(str)
-                    contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
-                    contents[column] = contents[column].map(lambda x: x.strip('=')) # 「=」を削除
-                    contents[column] = contents[column].map(lambda x: x.replace('\n','')) # 「\n」(改行)を削除
+                # 余計な記号などを削除する
+                contents = contentscontrol.contents_strip(columns, contents)
 
                 # 会社名のところにあるアスタリスク削除を行う。
-                contents[company_name_key] = name_replace('\*', ' ', regex=True)
-                contents[company_name_key] = name_replace('\＊', ' ', regex=True)
-                contents[company_name_key] = name_replace('(株)', '株式会社', regex=True)
-                contents[company_name_key] = name_replace('（株）', '株式会社', regex=True)
-                contents[company_name_key] = name_replace('(有)', '有限会社', regex=True)
-                contents[company_name_key] = name_replace('（有）', '有限会社', regex=True)
+                contents = contentscontrol.replace_company_contents(contents, company_name_key)
 
                 if not posting == contents[posting_start_date_key][1]:
                     contents[posting_start_date_key] = posting
@@ -243,7 +235,7 @@ class SearchPostalCode():
         postal_code_file_name = "zenkoku.csv"
         postal_code_data = pd.read_csv(postal_code_file_name)
         print(postal_code_data.head())
-        address = self.getAddress(inputZipCode)
+        address = getAddress(inputZipCode)
         if address == "":
             dlg = print(u"データベースには存在しません")
         else:
@@ -288,23 +280,28 @@ class Postal():
 
 
 class ContentsControl():
-    def replace_company_name(company):
+    # contents:dataframe
+    def replace_company_contents(contents, company_name_key):
 
-        if "(株)" in company:
-            regular_expression = re.compile(r'\(株\)')
-            dst = re.sub(regular_expression, '株式会社',company)
-        elif "（株）" in company:
-            regular_expression = re.compile(r'（株）')
-            dst = re.sub(regular_expression, "株式会社",company)
-        elif "(有)" in company:
-            regular_expression = re.compile(r'\(有\)')
-            dst = re.sub(regular_expression, "有限会社",company)
-        elif "（有）" in company:
-            regular_expression = re.compile(r'（有）')
-            dst = re.sub(regular_expression, "有限会社",company)
+        name_replace = contents[company_name_key].replace
+        contents[company_name_key] = name_replace('\*', ' ', regex=True)
+        contents[company_name_key] = name_replace('\＊', ' ', regex=True)
+        contents[company_name_key] = name_replace('(株)', '株式会社', regex=True)
+        contents[company_name_key] = name_replace('（株）', '株式会社', regex=True)
+        contents[company_name_key] = name_replace('(有)', '有限会社', regex=True)
+        contents[company_name_key] = name_replace('（有）', '有限会社', regex=True)
 
-        return dst
+        return contents
 
+    def contents_strip(columns, contents):
+
+        for column in columns:
+            contents[column] = contents[column].astype(str)
+            contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
+            contents[column] = contents[column].map(lambda x: x.strip('=')) # 「=」を削除
+            contents[column] = contents[column].map(lambda x: x.replace('\n','')) # 「\n」(改行)を削除
+
+        return contents
 
     # 取ってきた日付の内容が条件に合わない場合その週の月曜日の日付を取得する
     # date:str
@@ -372,22 +369,7 @@ class ContentsControl():
             elif row[check_column] == " ":
                 contents.pop(i)
 
-        return contents
-
-
-    # 36列目以降を削除する関数
-    def delete_columns(contents,target_column):
-        for i, column in enumerate(contents):
-            del column[target_column:]
-        return contents
-
-
-    # ファイルからとったdateをlistの先頭に挿入
-    def insert_date(contents,date):
-        for i, row in enumerate(contents):
-            row.insert(0,date)
-
-        return contents
+        return content
 
 
     # Y列がスペースしかなかった場合にそれを空文字列に置換する関数
