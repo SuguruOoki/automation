@@ -457,22 +457,7 @@ class FileControl():
                     print("root:"+root)
             else:
                 continue
-
-
-    # ファイル名から日付を取る
-    def get_date_from_file(target_file):
-        root, ext = os.path.splitext(target_file)
-        if ext == file_extention:
-            # ファイル名の日付が違った場合renameする
-            if "_" in root:
-                namelist = root.split("_")
-                # 普通ならnamelistの長さは2となるのでその２番目を日付の文字列として返す
-                return namelist[1]
-            else:
-                return ""
-        else:
-            return ""
-
+    
 
     # target_directoryに存在するbz2で圧縮されたcsvの内容をarrayにinsert
     def csv_insert_dataframe(self,target_directory):
