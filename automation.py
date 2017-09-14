@@ -163,64 +163,7 @@ class PerlProcess():
         # if tsv_target_files:
         #     # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
         #     # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
-        #     # データ取得日の入力などを行う
-        #     for tsv_target_file in tsv_target_files:
-        #         os.chdir(target_path)
-        #         contents = ContentsControl.tsv_file_insert_dataframe(tsv_target_file) # excelファイルをデータフレームにする
-        #         # なんでかNaNが残っている時があるので念のため。
-        #         contents = contents.fillna('')
-        #         columns = contents.columns.tolist()
-        #         company_name_key = [x for x in columns if company_name_search.match(x)][0]
-        #         posting_start_date_key = [x for x in columns if posting_start_date_search.match(x)][0]
-        #         name_replace = contents[company_name_key].replace
-        #         posting = ContentsControl.getDateMonday(contents[posting_start_date_key][1])
-        #         output_name_date = posting.replace('/', '')
-        #
-        #         for column in columns:
-        #             contents[column] = contents[column].astype(str)
-        #             contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
-        #             contents[column] = contents[column].map(lambda x: x.strip('=')) # 「=」を削除
-        #             contents[column] = contents[column].map(lambda x: x.replace('\n','')) # 「\n」(改行)を削除
-        #
-        #         # 会社名の置き換え処理
-        #         contents[company_name_key] = name_replace('\*', ' ', regex=True)
-        #         contents[company_name_key] = name_replace('\＊', ' ', regex=True)
-        #         contents[company_name_key] = name_replace('(株)', '株式会社', regex=True)
-        #         contents[company_name_key] = name_replace('（株）', '株式会社', regex=True)
-        #         contents[company_name_key] = name_replace('(有)', '有限会社', regex=True)
-        #         contents[company_name_key] = name_replace('（有）', '有限会社', regex=True)
-        #
-        #         if not posting == contents[posting_start_date_key][1]:
-        #             contents[posting_start_date_key] = posting
-        #             print("changed!")
-        #
-        #         # 電話番号の置き換え処理
-        #         contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
-        #         contents[tel_key] = contents[tel_key].apply(get_phone_number)
-        #         pd.set_option('display.width', 1)
-        #         postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
-        #         address3_error = contents[contents[address3]==''] # 住所がない
-        #         tel_error = contents[contents[tel_key]==''] # 電話番号がない
-        #         postal_prefecture_error = postal_code_error[postal_code_error[prefecture] == ''] # 郵便番号も都道府県もない
-        #
-        #         # いらない行を削ぎ落として問い合わせを行う行のみを抽出する
-        #         drop_index = list(set(postal_code_error.index.tolist() + address3_error.index.tolist() + tel_error.index.tolist()))
-        #         right_contents = contents.drop(drop_index)
-        #
-        #         # データ取得日についての処理を入れる
-        #         # データ掲載開始日を月曜に直す処理を入れる
-        #         # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
-        #         os.chdir(output_path)
-        #         output_name = tsv_target_file.split(".")[0]
-        #         output_excel(output_name+'_'+str(contents_length)+'_'+output_name_date+'_'+output_name_date, right_contents)
-        #         os.chdir(error_path)
-        #         output_excel(output_name+'_address3_error', address3_error)
-        #         output_excel(output_name+'_postal_code_error', postal_code_error)
-        #         output_excel(output_name+'_tel_error', tel_error)
-        #         output_excel(output_name+'_postal_prefecture_error', postal_prefecture_error)
-        # else:
-        #     print('target files is not found in edited folder!')
-        #     exit(1)
+
         elapsed_time = time.time() - start
         print ("処理時間:{0}".format(elapsed_time) + "[sec]")
 
