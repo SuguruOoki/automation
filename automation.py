@@ -52,7 +52,7 @@ class PerlProcess():
 
     # target_directoryはフルパスでの指定
     def mdaCheckCnt(target_directory, media_name):
-        # start = time.time()
+        start = time.time()
         get_phone_number = ContentsControl.get_tel
         output_excel = OutputExcel.dataframe_output
         contentscontrol = ContentsControl
@@ -111,7 +111,10 @@ class PerlProcess():
                 columns = contents.columns.tolist()
                 company_name_key = [x for x in columns if company_name_search.match(x)][0]
                 posting_start_date_key = [x for x in columns if posting_start_date_search.match(x)][0]
+
+                # 問い合わせ済み企業の行を削除
                 contents = pd.concat([contents, inquired_dataframe]).drop_duplicates(subset=[prefecture_key, address1_key, address2_key, address3_key], keep=False)
+
                 posting = ContentsControl.getDateMonday(contents[posting_start_date_key][1])
                 output_name_date = posting.replace('/', '')
 
@@ -128,14 +131,15 @@ class PerlProcess():
                 # エラーの検出処理
                 contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
                 contents[tel_key] = contents[tel_key].apply(get_phone_number)
-                postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
-                address3_error = contents[contents[address3_key]==''] # 住所がない
-                tel_error = contents[contents[tel_key]==''] # 電話番号がない
-                postal_prefecture_error = postal_code_error[postal_code_error[prefecture_key] == ''] # 郵便番号も都道府県もない
+                company_name_error = contents[(contents[company_name_key].astype('str').str.len() < 3)]
+                postal_code_error = contents[(contents[postal_code].astype('str').str.len() < 7) | (contents[postal_code].astype('str').str.len() > 8)] # 郵便番号がない行
+                address3_error = contents.loc[contents[address3_key].astype('str').str.len() <= 3] # 住所がない
+                tel_error = contents[(contents[tel_key].astype('str').str.len() < 12) | (contents[tel_key].astype('str').str.len() > 13)] # 電話番号が不適切
+                postal_prefecture_error = postal_code_error[postal_code_error[prefecture_key].astype('str').str.len() <= 2] # 郵便番号も都道府県もない
 
                 # 掲載開始日の取得と修正
                 # いらない行を削ぎ落として問い合わせを行う行のみを抽出する
-                drop_index = list(set(address3_error.index.tolist() + tel_error.index.tolist()))
+                drop_index = list(set(postal_code_error.index.tolist() + address3_error.index.tolist() + tel_error.index.tolist()))
                 right_contents = contents.drop(drop_index)
                 contents_length = len(right_contents)
 
@@ -147,6 +151,7 @@ class PerlProcess():
                 # OutputExcel.dataframe_output(output_name, contents)
                 output_excel(output_name+'_'+str(contents_length)+'_'+output_name_date+'_'+output_name_date, right_contents)
                 os.chdir(error_path)
+                output_excel(output_name+'_company_name_error', company_name_error)
                 output_excel(output_name+'_address3_error', address3_error)
                 output_excel(output_name+'_postal_code_error', postal_code_error)
                 output_excel(output_name+'_tel_error', tel_error)
@@ -216,8 +221,8 @@ class PerlProcess():
         # else:
         #     print('target files is not found in edited folder!')
         #     exit(1)
-        # elapsed_time = time.time() - start
-        # print ("処理時間:{0}".format(elapsed_time) + "[sec]")
+        elapsed_time = time.time() - start
+        print ("処理時間:{0}".format(elapsed_time) + "[sec]")
 
     def inquired_row_to_dataframe(target_directory, media_name):
         inquired_file_search_name = '*' + media_name + '*.*'
