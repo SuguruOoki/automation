@@ -141,7 +141,6 @@ class PerlProcess():
                 # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
                 output_name = target_file.split(".")[0]
                 os.chdir(output_path)
-                # OutputExcel.dataframe_output(output_name, contents)
                 output_excel(output_name+'_'+str(contents_length)+'_'+output_name_date+'_'+output_name_date, right_contents)
                 os.chdir(error_path)
                 if len(company_name_error) > 0:
@@ -257,27 +256,6 @@ class SearchPostalCode():
                 address = dataList[i].split('","')[5]+\
                           dataList[i].split('","')[6]+\
                           dataList[i].split('","')[7].split('"')[0]
-        return address
-
-
-
-class Postal():
-    def getAdressByPostalCode(self,postal_code):
-        url = 'http://geoapi.heartrails.com/api/json'
-        postal_code_length = len(re.findall('\d',postal_code))
-
-        # 郵便番号のバリデーション
-        if postal_code_length == 7:
-            print("Postal Code is Good!")
-        else:
-            print("Postal Code is Bad!")
-            return ''
-
-        payload = {'method':'searchByPostal'}
-        payload['postal']= postal_code
-        res = requests.get(url, params=payload).json()['response']['location'][0]
-        address = res['prefecture']+res['city']+res['town']
-        print(address)
         return address
 
 
