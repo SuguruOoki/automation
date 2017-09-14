@@ -416,8 +416,6 @@ class OutputExcel():
 
 
 class FileControl():
-    def file_copy(bef, aft):
-        shutil.copyfile(bef,aft)
 
     def get_find_all_files_name(target_directory, target_extention):
         files = os.listdir(target_directory)
@@ -457,7 +455,7 @@ class FileControl():
                     print("root:"+root)
             else:
                 continue
-    
+
 
     # target_directoryに存在するbz2で圧縮されたcsvの内容をarrayにinsert
     def csv_insert_dataframe(self,target_directory):
