@@ -403,59 +403,7 @@ class ContentsControl():
             return None
         else:
             return tel_list[0]
-
-
-
-class AbnormalityDetection():
-    def abnormal_detection(contents):
-        for key, row in contents.iterrows():
-            # print(row)
-            print(row['データ取得日'])
-
-
-    def phone_number_detection(num_wrong):
-
-        pattern = r"0\d{1,4}-\d{1,4}-\d{4}"
-        matchOB = re.match(pattern , num_wrong)
-        if matchOB:
-            print(matchOB.group())
-
-
-    def add_color_flg(contents):
-        flg_list = [0] * len(contents) # 色付け用フラグ列の追加
-        contents['フラグ'] = flg_list
-        return contents
-
-
-    def address3_detection(contents):
-        # address3's index =>
-        detection_index = 11 # 住所3は11
-        color_index = []
-        color_append = color_index.append
-        for i, content in contents:
-            if len(content[detection_index]) < 2:
-                color_append(i)
-        return color_index
-
-
-    def postal_code_detection(contents):
-        detection_index = 7 # 郵便番号は7
-        length = len
-        find_all = re.findall
-        for postal_code in contents[detection_index]:
-            postal_code_length = length(find_all('\d',postal_code))
-        # 郵便番号のバリデーション
-        if postal_code_length == 7:
-            print("Postal Code is Good!")
-        else:
-            print("Postal Code is Bad!")
-            return ''
-
-    def postal_code_detection2(contents):
-        pattern = r"\d{3}-\d{4}"
-        matchOB = re.match(pattern , num_wrong)
-        if matchOB:
-            print(matchOB.group())
+            
 
 
 class OutputExcel():
