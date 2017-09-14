@@ -53,13 +53,12 @@ class PerlProcess():
     # target_directoryはフルパスでの指定
     def mdaCheckCnt(target_directory, media_name):
         start = time.time()
-        get_phone_number = ContentsControl.get_tel
         output_excel = OutputExcel.dataframe_output
         contentscontrol = ContentsControl
         company_name_search = re.compile('会社名*')
         posting_start_date_search = re.compile('掲載開始日*')
         tel_key = 'TEL'
-        postal_code = '郵便番号'
+        postal_code_key = '郵便番号'
         prefecture_key = '都道府県'
         address1_key = '住所1'
         address2_key = '住所2'
@@ -91,10 +90,10 @@ class PerlProcess():
         tsv_target_files = FileControl.get_find_all_files_name(target_path, tsv_extention)
         inquired_dataframe = PerlProcess.inquired_row_to_dataframe(inquired_path, media_name) # 問い合わせ済みのファイルを読み込む
         inquired_dataframe = inquired_dataframe.fillna('')
-        inquired_dataframe = inquired_dataframe.rename(columns={prefecture_key: prefecture_key+'(修正後)',prefecture_key+'(修正前)':prefecture_key,
-                                address1_key: address1_key+'(修正後)',address1_key+'(修正前)':address1_key,
-                                address2_key: address2_key+'(修正後)',address2_key+'(修正前)':address2_key,
-                                address3_key: address3_key+'(修正後)',address3_key+'(修正前)':address3_key,
+        inquired_dataframe = inquired_dataframe.rename(columns={prefecture_key: prefecture_key+'(修正後)', prefecture_key+'(修正前)':prefecture_key,
+                                address1_key: address1_key+'(修正後)', address1_key+'(修正前)':address1_key,
+                                address2_key: address2_key+'(修正後)', address2_key+'(修正前)':address2_key,
+                                address3_key: address3_key+'(修正後)', address3_key+'(修正前)':address3_key,
                                 }, inplace=True)
         # elapsed_time = time.time() - start
         # print ("処理時間:{0}".format(elapsed_time) + "[sec]")
@@ -129,13 +128,7 @@ class PerlProcess():
                     print("changed!")
 
                 # エラーの検出処理
-                contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
-                contents[tel_key] = contents[tel_key].apply(get_phone_number)
-                company_name_error = contents[(contents[company_name_key].astype('str').str.len() < 3)]
-                postal_code_error = contents[(contents[postal_code].astype('str').str.len() < 7) | (contents[postal_code].astype('str').str.len() > 8)] # 郵便番号がない行
-                address3_error = contents.loc[contents[address3_key].astype('str').str.len() <= 3] # 住所がない
-                tel_error = contents[(contents[tel_key].astype('str').str.len() < 12) | (contents[tel_key].astype('str').str.len() > 13)] # 電話番号が不適切
-                postal_prefecture_error = postal_code_error[postal_code_error[prefecture_key].astype('str').str.len() <= 2] # 郵便番号も都道府県もない
+                tel_error, company_name_error, postal_code_error, postal_prefecture_error, address3_error = contentscontrol.error_detection(contents, tel_key=tel_key, company_name_key=company_name_key, postal_code_key=postal_code_key, prefecture_key=prefecture_key, address3_key=address3_key)
 
                 # 掲載開始日の取得と修正
                 # いらない行を削ぎ落として問い合わせを行う行のみを抽出する
@@ -154,7 +147,7 @@ class PerlProcess():
                 if len(company_name_error) > 0:
                     output_excel(output_name+'_company_name_error', company_name_error)
                 if len(address3_error) > 0:
-                output_excel(output_name+'_address3_error', address3_error)
+                    output_excel(output_name+'_address3_error', address3_error)
                 if len(postal_code_error) > 0:
                     output_excel(output_name+'_postal_code_error', postal_code_error)
                 if len(tel_error) > 0:
@@ -312,14 +305,6 @@ class ContentsControl():
 
         return contents
 
-    def search_error(key, contents):
-        contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
-        contents[tel_key] = contents[tel_key].apply(get_phone_number)
-        postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
-        address3_error = contents[contents[address3_key]==''] # 住所がない
-        tel_error = contents[contents[tel_key]==''] # 電話番号がない
-        postal_prefecture_error = postal_code_error[postal_code_error[prefecture_key] == ''] # 郵便番号も都道府県もない
-
     # 取ってきた日付の内容が条件に合わない場合その週の月曜日の日付を取得する
     # date:str
     def getDateMonday(date):
@@ -377,33 +362,29 @@ class ContentsControl():
             logging.error("tsv file : Columns Mistake error")
             exit(1)
 
-
-    # からもじ、またはスペースがあった行を削除する関数
-    def delete_row(contents, check_column):
-        for i, row in enumerate(contents):
-            if row[check_column] == "":
-                contents.pop(i)
-            elif row[check_column] == " ":
-                contents.pop(i)
-
-        return content
-
-
-    # Y列がスペースしかなかった場合にそれを空文字列に置換する関数
-    def delete_empty(contents,target_column):
-        for i, column in enumerate(contents):
-            if column[target_column] == " ":
-                column[target_column] = ""
-            elif column[target_column] == "　":
-                column[target_column] = ""
-        return contents
-
     def get_tel(tel_list):
         if len(tel_list) == 0:
             return None
         else:
             return tel_list[0]
-            
+
+    # contents:dataframe, key:array
+    def error_detection(contents, tel_key=None, company_name_key=None, postal_code_key=None, address3_key=None, prefecture_key=None):
+        get_phone_number = ContentsControl.get_tel
+        if tel_key:
+            contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
+            contents[tel_key] = contents[tel_key].apply(get_phone_number)
+            tel_error = contents[(contents[tel_key].astype('str').str.len() < 12) | (contents[tel_key].astype('str').str.len() > 13)] # 電話番号が不適切
+        if company_name_key:
+            company_name_error = contents[(contents[company_name_key].str.len() < 3)]
+        if postal_code_key:
+            postal_code_error = contents[(contents[postal_code_key].astype('str').str.len() < 7) | (contents[postal_code_key].astype('str').str.len() > 8)] # 郵便番号がない行
+            if prefecture_key:
+                postal_prefecture_error = postal_code_error[postal_code_error[prefecture_key].astype('str').str.len() <= 2] # 郵便番号も都道府県もない
+        if address3_key:
+            address3_error = contents.loc[contents[address3_key].astype('str').str.len() <= 3] # 住所がない
+
+        return tel_error, company_name_error, postal_code_error, postal_prefecture_error, address3_error
 
 
 class OutputExcel():
