@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import bz2,os,sys,glob,re,requests,json,datetime,shutil,csv,xlsxwriter,pandas as pd
+from collections import Counter
 import logging,subprocess,time
 import numpy as np
 global file_extention
@@ -86,84 +87,149 @@ class PerlProcess():
             subprocess.check_call(args)
         os.chdir(target_path)
 
-        target_files = FileControl.get_find_all_files_name(target_path, excel_extention)
+        # target_files = FileControl.get_find_all_files_name(target_path, excel_extention)
         tsv_target_files = FileControl.get_find_all_files_name(target_path, tsv_extention)
-        inquired_dataframe = PerlProcess.inquired_row_to_dataframe(inquired_path, media_name) # 問い合わせ済みのファイルを読み込む
-        inquired_dataframe = inquired_dataframe.fillna('')
-        inquired_dataframe = inquired_dataframe.rename(columns={prefecture_key: prefecture_key+'(修正後)', prefecture_key+'(修正前)':prefecture_key,
-                                address1_key: address1_key+'(修正後)', address1_key+'(修正前)':address1_key,
-                                address2_key: address2_key+'(修正後)', address2_key+'(修正前)':address2_key,
-                                address3_key: address3_key+'(修正後)', address3_key+'(修正前)':address3_key,
-                                }, inplace=True)
-        # elapsed_time = time.time() - start
-        # print ("処理時間:{0}".format(elapsed_time) + "[sec]")
-        if target_files:
+        # inquired_dataframe = PerlProcess.inquired_row_to_dataframe(inquired_path, media_name) # 問い合わせ済みのファイルを読み込む
+        # inquired_dataframe = inquired_dataframe.fillna('')
+        # inquired_dataframe = inquired_dataframe.rename(columns={prefecture_key: prefecture_key+'(修正後)', prefecture_key+'(修正前)':prefecture_key,
+        #                         address1_key: address1_key+'(修正後)', address1_key+'(修正前)':address1_key,
+        #                         address2_key: address2_key+'(修正後)', address2_key+'(修正前)':address2_key,
+        #                         address3_key: address3_key+'(修正後)', address3_key+'(修正前)':address3_key,
+        #                         }, inplace=True)
+        # # elapsed_time = time.time() - start
+        # # print ("処理時間:{0}".format(elapsed_time) + "[sec]")
+        # if target_files:
+        #     # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
+        #     # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
+        #     # データ取得日の入力などを行う
+        #     for target_file in target_files:
+        #         os.chdir(target_path)
+        #         contents = ContentsControl.excel_file_insert_dataframe(target_file) # excelファイルをデータフレームにする
+        #
+        #         # なんでかNaNが残っている時があるので念のため。
+        #         contents = contents.fillna('')
+        #
+        #         # データフレームのヘッダーを取得
+        #         columns = contents.columns.tolist()
+        #
+        #         # 会社と掲載開始日についてはkeyがブレるので正規表現でヘッダーを検索する
+        #         company_name_key = [x for x in columns if company_name_search.match(x)][0]
+        #         posting_start_date_key = [x for x in columns if posting_start_date_search.match(x)][0]
+        #
+        #         # 問い合わせ済み企業の行を削除
+        #         contents = pd.concat([contents, inquired_dataframe]).drop_duplicates(subset=[prefecture_key, address1_key, address2_key, address3_key], keep=False)
+        #
+        #         # 掲載開始日の週の月曜日を取得し、加工する
+        #         posting = ContentsControl.getDateMonday(contents[posting_start_date_key][1])
+        #         output_name_date = posting.replace('/', '')
+        #
+        #         # 余計な記号などを削除する
+        #         contents = contentscontrol.contents_strip(columns, contents)
+        #
+        #         # 会社名のところにあるアスタリスク削除を行う。
+        #         contents = contentscontrol.replace_company_contents(contents, company_name_key)
+        #
+        #         if not posting == contents[posting_start_date_key][1]:
+        #             contents[posting_start_date_key] = posting
+        #             print("changed!")
+        #
+        #         # エラーの検出処理
+        #         tel_error, company_name_error, postal_code_error, postal_prefecture_error, address3_error = contentscontrol.error_detection(contents, tel_key=tel_key, company_name_key=company_name_key, postal_code_key=postal_code_key, prefecture_key=prefecture_key, address3_key=address3_key)
+        #
+        #         # 掲載開始日の修正
+        #         # いらない行を削ぎ落として問い合わせを行う行のみを抽出する
+        #         drop_index = list(set(postal_code_error.index.tolist() + address3_error.index.tolist() + tel_error.index.tolist()))
+        #         right_contents = contents.drop(drop_index)
+        #         contents_length = len(right_contents)
+        #
+        #         # 正常行とエラー行をそれぞれexcel出力する
+        #         output_name = target_file.split(".")[0]
+        #         os.chdir(output_path)
+        #         output_excel(output_name+'_'+str(contents_length)+'_'+output_name_date+'_'+output_name_date, right_contents)
+        #         os.chdir(error_path)
+        #         if len(company_name_error) > 0:
+        #             output_excel(output_name+'_company_name_error', company_name_error)
+        #         if len(address3_error) > 0:
+        #             output_excel(output_name+'_address3_error', address3_error)
+        #         if len(postal_code_error) > 0:
+        #             output_excel(output_name+'_postal_code_error', postal_code_error)
+        #         if len(tel_error) > 0:
+        #             output_excel(output_name+'_tel_error', tel_error)
+        #         if len(postal_prefecture_error) > 0:
+        #             output_excel(output_name+'_postal_prefecture_error', postal_prefecture_error)
+        # else:
+        #     print('target files is not found in edited folder!')
+        #     exit(1)
+
+        if tsv_target_files:
             # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
             # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
             # データ取得日の入力などを行う
-            for target_file in target_files:
+            for tsv_target_file in tsv_target_files:
                 os.chdir(target_path)
-                contents = ContentsControl.excel_file_insert_dataframe(target_file) # excelファイルをデータフレームにする
+                logging.info(tsv_target_file)
+                contents = ContentsControl.tsv_file_insert_dataframe(tsv_target_file) # excelファイルをデータフレームにする
 
-                # なんでかNaNが残っている時があるので念のため。
-                contents = contents.fillna('')
+                # 列ずれなし：dataframe型で処理, 列ずれあり：dictionary型で処理 となる分岐
+                if type(contents) is pd.core.frame.DataFrame:
+                    # なんでかNaNが残っている時があるので念のため。
+                    contents = contents.fillna('')
 
-                # データフレームのヘッダーを取得
-                columns = contents.columns.tolist()
+                    # データフレームのヘッダーを取得
+                    columns = contents.columns.tolist()
 
-                # 会社と掲載開始日についてはkeyがブレるので正規表現でヘッダーを検索する
-                company_name_key = [x for x in columns if company_name_search.match(x)][0]
-                posting_start_date_key = [x for x in columns if posting_start_date_search.match(x)][0]
+                    # 会社と掲載開始日についてはkeyがブレるので正規表現でヘッダーを検索する
+                    company_name_key = [x for x in columns if company_name_search.match(x)][0]
+                    posting_start_date_key = [x for x in columns if posting_start_date_search.match(x)][0]
 
-                # 問い合わせ済み企業の行を削除
-                contents = pd.concat([contents, inquired_dataframe]).drop_duplicates(subset=[prefecture_key, address1_key, address2_key, address3_key], keep=False)
+                    # 問い合わせ済み企業の行を削除
+                    # contents = pd.concat([contents, inquired_dataframe]).drop_duplicates(subset=[prefecture_key, address1_key, address2_key, address3_key], keep=False)
 
-                # 掲載開始日の週の月曜日を取得し、加工する
-                posting = ContentsControl.getDateMonday(contents[posting_start_date_key][1])
-                output_name_date = posting.replace('/', '')
+                    # 掲載開始日の週の月曜日を取得し、加工する
+                    posting = ContentsControl.getDateMonday(contents[posting_start_date_key][1])
+                    output_name_date = posting.replace('/', '')
 
-                # 余計な記号などを削除する
-                contents = contentscontrol.contents_strip(columns, contents)
+                    # 余計な記号などを削除する
+                    contents = contentscontrol.contents_strip(columns, contents)
 
-                # 会社名のところにあるアスタリスク削除を行う。
-                contents = contentscontrol.replace_company_contents(contents, company_name_key)
+                    # 会社名のところにあるアスタリスク削除を行う。
+                    contents = contentscontrol.replace_company_contents(contents, company_name_key)
 
-                if not posting == contents[posting_start_date_key][1]:
-                    contents[posting_start_date_key] = posting
-                    print("changed!")
+                    if not posting == contents[posting_start_date_key][1]:
+                        contents[posting_start_date_key] = posting
+                        print("changed!")
 
-                # エラーの検出処理
-                tel_error, company_name_error, postal_code_error, postal_prefecture_error, address3_error = contentscontrol.error_detection(contents, tel_key=tel_key, company_name_key=company_name_key, postal_code_key=postal_code_key, prefecture_key=prefecture_key, address3_key=address3_key)
+                    # エラーの検出処理
+                    tel_error, company_name_error, postal_code_error, postal_prefecture_error, address3_error = contentscontrol.error_detection(contents, tel_key=tel_key, company_name_key=company_name_key, postal_code_key=postal_code_key, prefecture_key=prefecture_key, address3_key=address3_key)
 
-                # 掲載開始日の修正
-                # いらない行を削ぎ落として問い合わせを行う行のみを抽出する
-                drop_index = list(set(postal_code_error.index.tolist() + address3_error.index.tolist() + tel_error.index.tolist()))
-                right_contents = contents.drop(drop_index)
-                contents_length = len(right_contents)
+                    # 掲載開始日の修正
+                    # いらない行を削ぎ落として問い合わせを行う行のみを抽出する
+                    drop_index = list(set(postal_code_error.index.tolist() + address3_error.index.tolist() + tel_error.index.tolist()))
+                    right_contents = contents.drop(drop_index)
+                    contents_length = len(right_contents)
 
-                # 正常行とエラー行をそれぞれexcel出力する
-                output_name = target_file.split(".")[0]
-                os.chdir(output_path)
-                output_excel(output_name+'_'+str(contents_length)+'_'+output_name_date+'_'+output_name_date, right_contents)
-                os.chdir(error_path)
-                if len(company_name_error) > 0:
-                    output_excel(output_name+'_company_name_error', company_name_error)
-                if len(address3_error) > 0:
-                    output_excel(output_name+'_address3_error', address3_error)
-                if len(postal_code_error) > 0:
-                    output_excel(output_name+'_postal_code_error', postal_code_error)
-                if len(tel_error) > 0:
-                    output_excel(output_name+'_tel_error', tel_error)
-                if len(postal_prefecture_error) > 0:
-                    output_excel(output_name+'_postal_prefecture_error', postal_prefecture_error)
+                    # 正常行とエラー行をそれぞれexcel出力する
+                    output_name = tsv_target_file.split(".")[0]
+                    os.chdir(output_path)
+                    output_excel(output_name+'_'+str(contents_length)+'_'+output_name_date+'_'+output_name_date, right_contents)
+                    os.chdir(error_path)
+                    if len(company_name_error) > 0:
+                        output_excel(output_name+'_company_name_error', company_name_error)
+                    if len(address3_error) > 0:
+                        output_excel(output_name+'_address3_error', address3_error)
+                    if len(postal_code_error) > 0:
+                        output_excel(output_name+'_postal_code_error', postal_code_error)
+                    if len(tel_error) > 0:
+                        output_excel(output_name+'_tel_error', tel_error)
+                    if len(postal_prefecture_error) > 0:
+                        output_excel(output_name+'_postal_prefecture_error', postal_prefecture_error)
+                elif type(contents) is csv.DictReader:
+                    print("dict!")
+                else:
+                    print("are?")
         else:
-            print('target files is not found in edited folder!')
-            exit(1)
-
-        # if tsv_target_files:
-        #     # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
-        #     # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
-
+            print('excel target files is not found in edited folder!')
+            # exit(1)
         elapsed_time = time.time() - start
         print ("処理時間:{0}".format(elapsed_time) + "[sec]")
 
@@ -272,19 +338,44 @@ class ContentsControl():
 
 
     def tsv_file_insert_dataframe(target_file):
+        header = ['No', '媒体名', '掲載開始日＝データ取得日', '事業内容', '職種','会社名(詳細ページの募集企業名)',
+        '郵便番号', '都道府県', '住所1', '住所2', '住所3', 'TEL','担当部署', '担当者名', '上場市場','従業員数',
+        '資本金', '売上高', '広告スペース', '大カテゴリ','小カテゴリ', '掲載案件数', '派遣', '紹介', 'フラグ数',
+        'FAX', 'データ取得日', '版', '企業ホームページ','版コード', '広告サイズコード', '最寄り駅', '給与欄',
+        '勤務時間欄', '詳細ページ\u3000キャッチコピー','電話番号（TWN記載ママ）']
         try:
-            header = ['No', '媒体名', '掲載開始日＝データ取得日', '事業内容', '職種','会社名(詳細ページの募集企業名)',
-             '郵便番号', '都道府県', '住所1', '住所2', '住所3', 'TEL','担当部署', '担当者名', '上場市場','従業員数',
-             '資本金', '売上高', '広告スペース', '大カテゴリ','小カテゴリ', '掲載案件数', '派遣', '紹介', 'フラグ数',
-             'FAX', 'データ取得日', '版', '企業ホームページ','版コード', '広告サイズコード', '最寄り駅', '給与欄',
-             '勤務時間欄', '詳細ページ\u3000キャッチコピー','電話番号（TWN記載ママ）']
             use_cols = range(0,36)
-            data_df = pd.read_csv(target_file, sep='\t', names=header, usecols=use_cols, engine='python', encoding='utf8')
+            data_df = pd.read_csv(target_file, sep='\t', names=header, usecols=use_cols, engine='python', encoding='utf-8')
             return data_df
-        except ValueError:
-            # 読み込めないということはカラムがおかしいということなので。
-            logging.error("tsv file : Columns Mistake error")
-            exit(1)
+        except IndexError:
+            # 読み込めないということはカラムがおかしいということなので。この後に処理を続けるのはクソだがこの処理でやってみる
+            # logging.error("tsv file : Columns Mistake error")
+            data = []
+            length = len(header)
+            print(length)
+            with open(target_file, "r") as f:
+                reader = csv.DictReader(f, fieldnames = header, delimiter = '\t')
+                for index, row in enumerate(reader):
+                    # print(type(row.values()))
+                    none_count = 0
+                    row_list = list(row.values())
+                    none_count = row_list.count(None)
+                    if none_count > 0 and index > 0:
+                        print("None state exist!------------------------------------------")
+                        print(row)
+                    data.append(row)
+                #print(data[0])
+
+                exit(1)
+                return data
+                    # rowは辞書型になる
+                # for element in data:
+                    # print(len(element))
+                    # print(element)
+                    # if len(element) < length:
+
+        # finally:
+        #     logging.error("tsv_file_insert_dataframe is caused the Error!")
 
     def get_tel(tel_list):
         if len(tel_list) == 0:
