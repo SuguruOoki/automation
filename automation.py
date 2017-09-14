@@ -125,7 +125,7 @@ class PerlProcess():
                     contents[posting_start_date_key] = posting
                     print("changed!")
 
-                # 電話番号処理
+                # エラーの検出処理
                 contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
                 contents[tel_key] = contents[tel_key].apply(get_phone_number)
                 postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
@@ -294,7 +294,6 @@ class ContentsControl():
         return contents
 
     def contents_strip(columns, contents):
-
         for column in columns:
             contents[column] = contents[column].astype(str)
             contents[column] = contents[column].map(lambda x: x.strip().strip('\"'))
@@ -302,6 +301,14 @@ class ContentsControl():
             contents[column] = contents[column].map(lambda x: x.replace('\n','')) # 「\n」(改行)を削除
 
         return contents
+
+    def search_error(key, contents):
+        contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
+        contents[tel_key] = contents[tel_key].apply(get_phone_number)
+        postal_code_error = contents[contents[postal_code] == ''] # 郵便番号がない行
+        address3_error = contents[contents[address3_key]==''] # 住所がない
+        tel_error = contents[contents[tel_key]==''] # 電話番号がない
+        postal_prefecture_error = postal_code_error[postal_code_error[prefecture_key] == ''] # 郵便番号も都道府県もない
 
     # 取ってきた日付の内容が条件に合わない場合その週の月曜日の日付を取得する
     # date:str
