@@ -433,21 +433,6 @@ class FileControl():
         else:
             return return_files
 
-    # ファイルの内容までを取得する
-    def get_files(target_directory, target_extention=''):
-        os.chdir(target_directory)
-        files = os.listdir(target_directory)
-        for file in files:
-            root, ext = os.path.splitext(file)
-            print(file)
-            if ext == target_extention:
-                # 一行ずつ取得するパターン
-                with csv.open(file, 'r') as f:
-                    data = [[str(elm) for elm in v] for v in csv.reader(f)]
-
-                    for row in data:
-                        print(row)          # 1行ずつ取得できる
-
 
     def rename_files(target_directory):
         os.chdir(target_directory)
