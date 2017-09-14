@@ -506,12 +506,6 @@ class FileControl():
                 continue
 
 
-    def dataframe_to_excel(fileName):
-        writer = pd.ExcelWriter(fileName,engine='xlsxwriter')
-        csv_contents.to_excel(writer)
-        writer.save()
-
-
 
 if __name__ == '__main__':
     # args = sys.argv
