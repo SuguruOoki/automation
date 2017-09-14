@@ -151,11 +151,16 @@ class PerlProcess():
                 # OutputExcel.dataframe_output(output_name, contents)
                 output_excel(output_name+'_'+str(contents_length)+'_'+output_name_date+'_'+output_name_date, right_contents)
                 os.chdir(error_path)
-                output_excel(output_name+'_company_name_error', company_name_error)
+                if len(company_name_error) > 0:
+                    output_excel(output_name+'_company_name_error', company_name_error)
+                if len(address3_error) > 0:
                 output_excel(output_name+'_address3_error', address3_error)
-                output_excel(output_name+'_postal_code_error', postal_code_error)
-                output_excel(output_name+'_tel_error', tel_error)
-                output_excel(output_name+'_postal_prefecture_error', postal_prefecture_error)
+                if len(postal_code_error) > 0:
+                    output_excel(output_name+'_postal_code_error', postal_code_error)
+                if len(tel_error) > 0:
+                    output_excel(output_name+'_tel_error', tel_error)
+                if len(postal_prefecture_error) > 0:
+                    output_excel(output_name+'_postal_prefecture_error', postal_prefecture_error)
         else:
             print('target files is not found in edited folder!')
             exit(1)
