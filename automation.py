@@ -107,13 +107,18 @@ class PerlProcess():
 
                 # なんでかNaNが残っている時があるので念のため。
                 contents = contents.fillna('')
+
+                # データフレームのヘッダーを取得
                 columns = contents.columns.tolist()
+
+                # 会社と掲載開始日についてはkeyがブレるので正規表現でヘッダーを検索する
                 company_name_key = [x for x in columns if company_name_search.match(x)][0]
                 posting_start_date_key = [x for x in columns if posting_start_date_search.match(x)][0]
 
                 # 問い合わせ済み企業の行を削除
                 contents = pd.concat([contents, inquired_dataframe]).drop_duplicates(subset=[prefecture_key, address1_key, address2_key, address3_key], keep=False)
 
+                # 掲載開始日の週の月曜日を取得し、加工する
                 posting = ContentsControl.getDateMonday(contents[posting_start_date_key][1])
                 output_name_date = posting.replace('/', '')
 
@@ -130,15 +135,13 @@ class PerlProcess():
                 # エラーの検出処理
                 tel_error, company_name_error, postal_code_error, postal_prefecture_error, address3_error = contentscontrol.error_detection(contents, tel_key=tel_key, company_name_key=company_name_key, postal_code_key=postal_code_key, prefecture_key=prefecture_key, address3_key=address3_key)
 
-                # 掲載開始日の取得と修正
+                # 掲載開始日の修正
                 # いらない行を削ぎ落として問い合わせを行う行のみを抽出する
                 drop_index = list(set(postal_code_error.index.tolist() + address3_error.index.tolist() + tel_error.index.tolist()))
                 right_contents = contents.drop(drop_index)
                 contents_length = len(right_contents)
 
-                # データ取得日についての処理を入れる
-                # データ掲載開始日を月曜に直す処理を入れる
-                # 途中のカラム数が違うものについてはDataframeに入らないのでそのエラー処理はここには入れない
+                # 正常行とエラー行をそれぞれexcel出力する
                 output_name = target_file.split(".")[0]
                 os.chdir(output_path)
                 output_excel(output_name+'_'+str(contents_length)+'_'+output_name_date+'_'+output_name_date, right_contents)
