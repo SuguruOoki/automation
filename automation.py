@@ -245,34 +245,6 @@ class PerlProcess():
             logging.error('inquired_file is not found')
 
 
-class SearchPostalCode():
-
-    def showAddress(self, input_postal_code):
-        postal_code_file_name = "zenkoku.csv"
-        postal_code_data = pd.read_csv(postal_code_file_name)
-        print(postal_code_data.head())
-        address = getAddress(inputZipCode)
-        if address == "":
-            dlg = print(u"データベースには存在しません")
-        else:
-            addr = address.decode(sys.stdin.encoding)
-
-
-    def getAddress(self, inputZipCode):
-        indata = open(file_name, 'r')
-        dataList = indata.read().splitlines()
-        totalDataNumber = len(dataList)
-        address = ""
-
-        for i in xrange(totalDataNumber):
-            zipCode = dataList[i].split('","')[1]
-            if zipCode == inputZipCode:
-                address = dataList[i].split('","')[5]+\
-                          dataList[i].split('","')[6]+\
-                          dataList[i].split('","')[7].split('"')[0]
-        return address
-
-
 class ContentsControl():
     # contents:dataframe
     def replace_company_contents(contents, company_name_key):
@@ -311,6 +283,7 @@ class ContentsControl():
 
 
     # target_file(csv)の内容をarrayにinsert
+    # 現在は使う予定なし。
     def csv_file_insert_dataframe(target_file):
         try:
             data_df = pd.read_csv(target_file, encoding="utf8", engine="python", na_values='')
@@ -352,7 +325,6 @@ class ContentsControl():
         except IndexError:
             # 読み込めないということはカラムがおかしいということなので。この後に処理を続けるのはクソだがこの処理でやってみる
             # カラムとカラムの間にある改行一つまでならこのエラー処理で対応可能。
-            # logging.error("tsv file : Columns Mistake error")
             data = []
             length = len
             import_default_column_num = 52
@@ -435,32 +407,6 @@ class FileControl():
             return files
         else:
             return return_files
-
-
-    def rename_files(target_directory):
-        os.chdir(target_directory)
-        files = os.listdir(target_directory)
-        date = datetime.datetime.today().strftime("%Y%m%d")
-
-        for file in files:
-            root, ext = os.path.splitext(file)
-            print(file)
-            if ext == file_extention:
-                # ファイル名の日付が違った場合renameする
-                if "_" in root:
-                    namelist = root.split("_")
-                    # 普通ならnamelistの長さは4となる
-                    if len(namelist) >= 4:
-                        if namelist[3] != date:
-                            namelist[3] = date
-                        if namelist[4] != date:
-                            namelist[4] = date
-
-                else:
-                    print("root:"+root)
-            else:
-                continue
-
 
     # target_directoryに存在するbz2で圧縮されたcsvの内容をarrayにinsert
     def csv_insert_dataframe(self,target_directory):
