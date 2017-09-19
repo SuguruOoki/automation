@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import bz2,os,sys,glob,re,requests,json,datetime,shutil,csv,xlsxwriter,pandas as pd
+import bz2, os, sys, glob, re, requests, json, datetime, shutil, csv, xlsxwriter, pandas as pd
 from collections import Counter
+from collections import OrderedDict
 import logging,subprocess,time
 import numpy as np
 global file_extention
@@ -243,6 +244,7 @@ class PerlProcess():
         else:
             logging.error('inquired_file is not found')
 
+
 class SearchPostalCode():
 
     def showAddress(self, input_postal_code):
@@ -269,7 +271,6 @@ class SearchPostalCode():
                           dataList[i].split('","')[6]+\
                           dataList[i].split('","')[7].split('"')[0]
         return address
-
 
 
 class ContentsControl():
@@ -338,6 +339,7 @@ class ContentsControl():
 
 
     def tsv_file_insert_dataframe(target_file):
+        print("tsv file is loading...")
         header = ['No', '媒体名', '掲載開始日＝データ取得日', '事業内容', '職種','会社名(詳細ページの募集企業名)',
         '郵便番号', '都道府県', '住所1', '住所2', '住所3', 'TEL','担当部署', '担当者名', '上場市場','従業員数',
         '資本金', '売上高', '広告スペース', '大カテゴリ','小カテゴリ', '掲載案件数', '派遣', '紹介', 'フラグ数',
@@ -349,33 +351,36 @@ class ContentsControl():
             return data_df
         except IndexError:
             # 読み込めないということはカラムがおかしいということなので。この後に処理を続けるのはクソだがこの処理でやってみる
+            # カラムとカラムの間にある改行一つまでならこのエラー処理で対応可能。
             # logging.error("tsv file : Columns Mistake error")
             data = []
-            length = len(header)
-            print(length)
+            length = len
+            import_default_column_num = 52
+            use_default_column_num = 36
+
+            # 列ずれの修正処理
             with open(target_file, "r") as f:
-                reader = csv.DictReader(f, fieldnames = header, delimiter = '\t')
-                for index, row in enumerate(reader):
-                    # print(type(row.values()))
-                    none_count = 0
-                    row_list = list(row.values())
-                    none_count = row_list.count(None)
-                    if none_count > 0 and index > 0:
-                        print("None state exist!------------------------------------------")
-                        print(row)
-                    data.append(row)
-                #print(data[0])
+                reader = csv.reader(f, delimiter='\t')
+                data = [x for x in reader]
+                save_index = []
+                print(len(data))
+                for index, row in enumerate(data):
+                    if length(row) < import_default_column_num:
+                        if data[index+1][0] == '':
+                            del data[index + 1][0]
+                        row.extend(data[index+1])
+                        # save_index.append(index+1)
+                        del data[index+1]
 
-                exit(1)
-                return data
-                    # rowは辞書型になる
-                # for element in data:
-                    # print(len(element))
-                    # print(element)
-                    # if len(element) < length:
+                # 使うのは37列だけなのでそれ以降の列は削除する
+                for index, d in enumerate(data):
+                    if length(d) > use_default_column_num:
+                        del d[use_default_column_num:]
+                data.insert(0, header)
 
-        # finally:
-        #     logging.error("tsv_file_insert_dataframe is caused the Error!")
+                contents = pd.DataFrame(data[1:], columns=data[0])
+
+                return contents
 
     def get_tel(tel_list):
         if len(tel_list) == 0:
