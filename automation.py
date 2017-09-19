@@ -8,6 +8,7 @@ import numpy as np
 global file_extention
 global excel_extention
 global csv_extention
+import xlrd
 
 file_extention = '.txt'
 excel_extention = '.xlsx'
@@ -15,6 +16,7 @@ csv_extention = '.csv'
 tsv_extention = '.tsv'
 
 class PerlProcess():
+    # この関数は以前使われていたperlのプログラムにあったため一応実装したが、現在(20170918)は使われていない。
     def logCheck(target_directory):
         log_file = 'mda_log.log'
         try:
@@ -32,7 +34,7 @@ class PerlProcess():
             logfile_list = [x for x in logfile_list if pattern1 in x]
             logfile_list = [x for x in logfile_list\
              if pattern2 or pattern3 or pattern4 or pattern5 or pattern6 in x]
-            print(logfile_list)
+            logging.info(logfile_list)
         except ValueError:
             logging.error('Not Found {}'.format(log_file))
 
@@ -44,7 +46,6 @@ class PerlProcess():
             os.chdir(target_directory)
             for file in files:
                 root, ext = os.path.splitext(file)
-                #print(file)
                 if ext == excel_extention or ext == csv_extention:
                     ren = pattern.sub(u'', file)
                     args = ['mv', file, ren]
@@ -54,7 +55,6 @@ class PerlProcess():
 
     # target_directoryはフルパスでの指定
     def mdaCheckCnt(target_directory, media_name):
-        start = time.time()
         output_excel = OutputExcel.dataframe_output
         contentscontrol = ContentsControl
         company_name_search = re.compile('会社名*')
@@ -73,7 +73,7 @@ class PerlProcess():
         # output_path => 処理が終わった結果のファイルを格納する
         # error_path => エラーであった行を取り出したファイルを格納する
         # media_path => メディア毎の問い合わせ済みのファイルを格納しておく
-        print(target_directory)
+        logging.info(target_directory)
         os.chdir(target_directory)
         target_path = target_directory+'/'+'test'
         output_path = target_directory+'/'+'edited'
@@ -99,9 +99,7 @@ class PerlProcess():
                                 address1_key: address1_key+'(修正後)', address1_key+'(修正前)':address1_key,
                                 address2_key: address2_key+'(修正後)', address2_key+'(修正前)':address2_key,
                                 address3_key: address3_key+'(修正後)', address3_key+'(修正前)':address3_key,
-                                }, inplace=True)
-        # elapsed_time = time.time() - start
-        # print ("処理時間:{0}".format(elapsed_time) + "[sec]")
+                                })
         if target_files:
             # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
             # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
@@ -124,7 +122,7 @@ class PerlProcess():
                 contents = pd.concat([contents, inquired_dataframe]).drop_duplicates(subset=[prefecture_key, address1_key, address2_key, address3_key], keep=False)
 
                 # 掲載開始日の週の月曜日を取得し、加工する
-                posting = ContentsControl.getDateMonday(contents[posting_start_date_key][1])
+                posting = ContentsControl.getDateMonday(contents[posting_start_date_key].values[0])
                 output_name_date = posting.replace('/', '')
 
                 # 余計な記号などを削除する
@@ -133,9 +131,9 @@ class PerlProcess():
                 # 会社名のところにあるアスタリスク削除を行う。
                 contents = contentscontrol.replace_company_contents(contents, company_name_key)
 
-                if not posting == contents[posting_start_date_key][1]:
+                if not posting == contents[posting_start_date_key].values[0]:
                     contents[posting_start_date_key] = posting
-                    print("changed!")
+                    logging.info("changed!")
 
                 # エラーの検出処理
                 tel_error, company_name_error, postal_code_error, postal_prefecture_error, address3_error = contentscontrol.error_detection(contents, tel_key=tel_key, company_name_key=company_name_key, postal_code_key=postal_code_key, prefecture_key=prefecture_key, address3_key=address3_key)
@@ -145,9 +143,12 @@ class PerlProcess():
                 drop_index = list(set(postal_code_error.index.tolist() + address3_error.index.tolist() + tel_error.index.tolist()))
                 right_contents = contents.drop(drop_index)
                 contents_length = len(right_contents)
+                updated_inquired_dataframe = OutputExcel.add_row_inquired_dataframe(right_contents, inquired_dataframe)
 
                 # 正常行とエラー行をそれぞれexcel出力する
                 output_name = target_file.split(".")[0]
+                os.chdir(inquired_path)
+                output_excel(media_name, updated_inquired_dataframe) # 問い合わせファイルをアップデートする。
                 os.chdir(output_path)
                 output_excel(output_name+'_'+str(contents_length)+'_'+output_name_date+'_'+output_name_date, right_contents)
                 os.chdir(error_path)
@@ -162,7 +163,7 @@ class PerlProcess():
                 if len(postal_prefecture_error) > 0:
                     output_excel(output_name+'_postal_prefecture_error', postal_prefecture_error)
         else:
-            print('target files is not found in edited folder!')
+            logging.info('target files is not found in edited folder!')
             exit(1)
 
         if tsv_target_files:
@@ -188,7 +189,7 @@ class PerlProcess():
                 contents = pd.concat([contents, inquired_dataframe]).drop_duplicates(subset=[prefecture_key, address1_key, address2_key, address3_key], keep=False)
 
                 # 掲載開始日の週の月曜日を取得し、加工する
-                posting = ContentsControl.getDateMonday(contents[posting_start_date_key][1])
+                posting = ContentsControl.getDateMonday(contents[posting_start_date_key].values[0])
                 output_name_date = posting.replace('/', '')
 
                 # 余計な記号などを削除する
@@ -197,9 +198,9 @@ class PerlProcess():
                 # 会社名のところにあるアスタリスク削除を行う。
                 contents = contentscontrol.replace_company_contents(contents, company_name_key)
 
-                if not posting == contents[posting_start_date_key][1]:
+                if not posting == contents[posting_start_date_key].values[0]:
                     contents[posting_start_date_key] = posting
-                    print("changed!")
+                    logging.info("changed!")
 
                 # エラーの検出処理
                 tel_error, company_name_error, postal_code_error, postal_prefecture_error, address3_error = contentscontrol.error_detection(contents, tel_key=tel_key, company_name_key=company_name_key, postal_code_key=postal_code_key, prefecture_key=prefecture_key, address3_key=address3_key)
@@ -226,15 +227,12 @@ class PerlProcess():
                 if len(postal_prefecture_error) > 0:
                     output_excel(output_name+'_postal_prefecture_error', postal_prefecture_error)
         else:
-            print('excel target files is not found in edited folder!')
-            # exit(1)
-        elapsed_time = time.time() - start
-        print ("処理時間:{0}".format(elapsed_time) + "[sec]")
+            logging.info('excel target files is not found in edited folder!')
 
     def inquired_row_to_dataframe(target_directory, media_name):
         inquired_file_search_name = '*' + media_name + '*.*'
         inquired_file = glob.glob(target_directory+'/'+inquired_file_search_name)
-        print(inquired_file)
+        logging.info(inquired_file)
         if inquired_file:
             contents = ContentsControl.excel_file_insert_dataframe(inquired_file[0])
             return contents
@@ -245,7 +243,6 @@ class PerlProcess():
 class ContentsControl():
     # contents:dataframe
     def replace_company_contents(contents, company_name_key):
-
         name_replace = contents[company_name_key].replace
         contents[company_name_key] = name_replace('\*', ' ', regex=True)
         contents[company_name_key] = name_replace('\＊', ' ', regex=True)
@@ -278,7 +275,6 @@ class ContentsControl():
             mondaydate = get_date - datetime.timedelta(days=day)
             return mondaydate.strftime("%Y%m%d")
 
-
     # target_file(csv)の内容をarrayにinsert
     # 現在は使う予定なし。
     def csv_file_insert_dataframe(target_file):
@@ -310,7 +306,9 @@ class ContentsControl():
             # 読み込めないということはカラムがおかしいということなので。
             logging.error("excel file : Columns Mistake error")
             exit(1)
-
+        except xlrd.biffh.XLRDError:
+            logging.error("excel file : XLRDError")
+            exit(1)
 
     def tsv_file_insert_dataframe(target_file):
         logging.info("tsv file is loading...")
@@ -337,7 +335,6 @@ class ContentsControl():
                 reader = csv.reader(f, delimiter='\t')
                 data = [x for x in reader]
                 save_index = []
-                print(len(data))
                 for index, row in enumerate(data):
                     if length(row) < import_default_column_num:
                         if data[index+1][0] == '':
@@ -351,7 +348,6 @@ class ContentsControl():
                     if length(d) > use_default_column_num:
                         del d[use_default_column_num:]
                 data.insert(0, header)
-
                 contents = pd.DataFrame(data[1:], columns=data[0])
                 logging.info("tsv file is converted to dataframe!")
 
@@ -384,19 +380,41 @@ class ContentsControl():
 
 class OutputExcel():
     def dataframe_output(output_name, contents):
-        # start = time.time()
         headers = contents.columns
         writer = pd.ExcelWriter('{}.xlsx'.format(output_name), engine='xlsxwriter')
         contents.to_excel(writer, sheet_name='Sheet1',index=False)
         writer.save()
         writer.close()
-        # elapsed_time = time.time() - start
-        # print("描き込み時間:{0}".format(elapsed_time) + "[sec]")
 
+    def add_row_inquired_dataframe(right_dataframe, inquired_dataframe):
+        prefecture_before_key = '都道府県(修正前)'
+        address1_before_key = '住所1(修正前)'
+        address2_before_key = '住所2(修正前)'
+        address3_before_key = '住所3(修正前)'
+        prefecture_key = '都道府県'
+        address1_key = '住所1'
+        address2_key = '住所2'
+        address3_key = '住所3'
+
+        columns = right_dataframe.columns
+
+        for column in columns:
+            if (column == prefecture_key):
+                continue
+            elif (column == address1_key):
+                continue
+            elif (column == address2_key):
+                continue
+            elif (column == address3_key):
+                continue
+            else:
+                right_dataframe = right_dataframe.drop(column, axis=1)
+        updated_inquired_dataframe = pd.concat([right_dataframe, inquired_dataframe])
+
+        return updated_inquired_dataframe
 
 
 class FileControl():
-
     def get_find_all_files_name(target_directory, target_extention):
         files = os.listdir(target_directory)
         return_files = []
@@ -405,7 +423,6 @@ class FileControl():
                 root, ext = os.path.splitext(file)
                 if ext == target_extention: # target_extentionが一致した時
                     return_files.append(file)
-
         if len(return_files) <= 0:
             return files
         else:
