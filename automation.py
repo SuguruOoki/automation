@@ -248,8 +248,10 @@ class ContentsControl():
         contents[company_name_key] = name_replace('\＊', ' ', regex=True)
         contents[company_name_key] = name_replace('(株)', '株式会社', regex=True)
         contents[company_name_key] = name_replace('（株）', '株式会社', regex=True)
+        contents[company_name_key] = name_replace('㈱', '株式会社', regex=True)
         contents[company_name_key] = name_replace('(有)', '有限会社', regex=True)
         contents[company_name_key] = name_replace('（有）', '有限会社', regex=True)
+        contents[company_name_key] = name_replace('㈲', '有限会社', regex=True)
 
         return contents
 
