@@ -55,8 +55,12 @@ class PerlProcess():
 
     # target_directoryはフルパスでの指定
     def mdaCheckCnt(target_directory, media_name):
+        # 高速化のためになんども使う関数に関して変数に保存しておく
         output_excel = OutputExcel.dataframe_output
         contentscontrol = ContentsControl
+        length = len
+        chdir = os.chdir
+        # 変数
         company_name_search = re.compile('会社名*')
         posting_start_date_search = re.compile('掲載開始日*')
         tel_key = 'TEL'
@@ -74,7 +78,7 @@ class PerlProcess():
         # error_path => エラーであった行を取り出したファイルを格納する
         # media_path => メディア毎の問い合わせ済みのファイルを格納しておく
         logging.info(target_directory)
-        os.chdir(target_directory)
+        chdir(target_directory)
         target_path = target_directory+'/'+'test'
         output_path = target_directory+'/'+'edited'
         error_path = target_directory+'/'+'error'
@@ -86,7 +90,7 @@ class PerlProcess():
         if not os.path.exists(error_path):
             args = ['mkdir', 'error']
             subprocess.check_call(args)
-        os.chdir(target_path)
+        chdir(target_path)
 
         target_files = FileControl.get_find_all_files_name(target_path, excel_extention) # excelファイルのロード
         tsv_target_files = FileControl.get_find_all_files_name(target_path, tsv_extention) # tsvファイルのロード
@@ -149,25 +153,25 @@ class PerlProcess():
                 # いらない行を削ぎ落として問い合わせを行う行のみを抽出する
                 drop_index = list(set(postal_code_error.index.tolist() + address3_error.index.tolist() + tel_error.index.tolist()))
                 right_contents = contents.drop(drop_index)
-                contents_length = len(right_contents)
+                contents_length = length(right_contents)
                 updated_inquired_dataframe = OutputExcel.add_row_inquired_dataframe(right_contents, inquired_dataframe)
 
                 # 正常行とエラー行をそれぞれexcel出力する
                 output_name = target_file.split(".")[0]
-                os.chdir(inquired_path)
+                chdir(inquired_path)
                 output_excel(media_name, updated_inquired_dataframe) # 問い合わせファイルをアップデートする。
-                os.chdir(output_path)
+                chdir(output_path)
                 output_excel(output_name+'_'+str(contents_length)+'_'+output_name_date+'_'+output_name_date, right_contents)
-                os.chdir(error_path)
-                if len(company_name_error) > 0:
+                chdir(error_path)
+                if length(company_name_error) > 0:
                     output_excel(output_name+'_company_name_error', company_name_error)
-                if len(address3_error) > 0:
+                if length(address3_error) > 0:
                     output_excel(output_name+'_address3_error', address3_error)
-                if len(postal_code_error) > 0:
+                if length(postal_code_error) > 0:
                     output_excel(output_name+'_postal_code_error', postal_code_error)
-                if len(tel_error) > 0:
+                if length(tel_error) > 0:
                     output_excel(output_name+'_tel_error', tel_error)
-                if len(postal_prefecture_error) > 0:
+                if length(postal_prefecture_error) > 0:
                     output_excel(output_name+'_postal_prefecture_error', postal_prefecture_error)
         else:
             logging.info('target files is not found in edited folder!')
