@@ -191,21 +191,22 @@ class PerlProcess():
 class FillBlanks():
     # 市外局番ファイルをpickle化するための関数
     def dataframe_to_pickle(file_name, dataframe, file_path=None, save_path=None):
+        chdir = os.chdir
         if file_path:
-            os.chdir(file_path)
+            chdir(file_path)
         else:
-            os.chdir(os.path.dirname(os.path.abspath(__file__)))
+            chdir(os.path.dirname(os.path.abspath(__file__)))
 
         with open(file_name, 'wb') as f1:
             if save_path:
-                os.chdir(save_path)
+                chdir(save_path)
             else:
-                os.chdir(os.path.dirname(os.path.abspath(__file__)))
+                chdir(os.path.dirname(os.path.abspath(__file__)))
 
             if os.path.exists(file_name):
                 pickle.dump(dataframe, f1)
             else:
-                logging.error("{} ")
+                logging.error("「{}」 is not found!".format(file_name))
 
     # 市外局番ファイルをpickle化したものを読み込む関数
     def pickle_to_dataframe(file_name):
