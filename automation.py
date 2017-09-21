@@ -34,7 +34,7 @@ class PerlProcess():
             logfile_list = [x for x in logfile_list if pattern1 in x]
             logfile_list = [x for x in logfile_list\
              if pattern2 or pattern3 or pattern4 or pattern5 or pattern6 in x]
-            logging.info(logfile_list)
+            print(logfile_list)
         except ValueError:
             logging.error('Not Found {}'.format(log_file))
 
@@ -80,7 +80,7 @@ class PerlProcess():
         # output_path => 処理が終わった結果のファイルを格納する
         # error_path => エラーであった行を取り出したファイルを格納する
         # media_path => メディア毎の問い合わせ済みのファイルを格納しておく
-        logging.info(target_directory)
+        print(target_directory)
         chdir(target_directory)
         target_path = target_directory+'/'+'test'
         output_path = target_directory+'/'+'edited'
@@ -116,7 +116,7 @@ class PerlProcess():
             for target_file in target_files:
                 # tsvとexcelファイルで処理を変更する
                 extention = os.path.splitext(target_file)[1]
-                logging.info(target_file)
+                print(target_file)
                 if extention == excel_extention:
                     contents = ContentsControl.excel_file_insert_dataframe(target_file) # excelファイルをデータフレームにする
                 elif extention == tsv_extention:
@@ -138,7 +138,9 @@ class PerlProcess():
                 contents = contentscontrol.contents_strip(columns, contents)
 
                 # 電話番号による都道府県を補完処理
+                chdir(target_directory)
                 areacode_dataframe = fillblanks.pickle_to_dataframe(areacode_file_name)
+                chdir(target_path)
                 contents = fillblanks.fill_prefecture_by_phone_number(areacode_dataframe, contents)
 
                 # 会社名のところにあるアスタリスクなどの削除を行う。
@@ -149,7 +151,7 @@ class PerlProcess():
                 output_name_date = posting.replace('/', '')
                 if not posting == contents[posting_start_date_key].values[0]:
                     contents[posting_start_date_key] = posting
-                    logging.info("changed!")
+                    print("posting date is changed!")
 
                 # エラーの検出処理
                 tel_error, company_name_error, postal_code_error, postal_prefecture_error, address3_error = contentscontrol.error_detection(contents, tel_key=tel_key, company_name_key=company_name_key, postal_code_key=postal_code_key, prefecture_key=prefecture_key, address3_key=address3_key)
@@ -179,13 +181,13 @@ class PerlProcess():
                 if length(postal_prefecture_error) > 0:
                     output_excel(output_name+'_postal_prefecture_error', postal_prefecture_error)
         else:
-            logging.info('target files is not found in edited folder!')
+            print('target files is not found in edited folder!')
             exit(1)
 
     def inquired_row_to_dataframe(target_directory, media_name):
         inquired_file_search_name = '*' + media_name + '*.*'
         inquired_file = glob.glob(target_directory+'/'+inquired_file_search_name)
-        logging.info(inquired_file)
+        print(inquired_file)
         if inquired_file:
             contents = ContentsControl.excel_file_insert_dataframe(inquired_file[0])
             return contents
@@ -222,13 +224,14 @@ class FillBlanks():
         return dataframe
 
     def fill_prefecture_by_phone_number(area_code_dataframe, fill_dataframe):
+        print("fix the prefecture errors by area code...")
         phone_number_key = 'TEL'
         prefecture_key = '都道府県'
 
         # 都道府県埋めが必要な県のみに行を絞る
-        dataframe = fill_dataframe[fill_dataframe[prefecture_key].isnull()]
-        print(dataframe)
-        # print(dataframe[phone_number_key])
+        dataframe = fill_dataframe[(fill_dataframe[prefecture_key] == '') or (fill_dataframe[prefecture_key].str.isnull())]
+        print(dataframe[prefecture_key])
+        print(dataframe[phone_number_key])
         exit(1)
 
 
@@ -272,7 +275,7 @@ class ContentsControl():
     # target_file(csv)の内容をarrayにinsert
     # 現在は使う予定なし。
     def csv_file_insert_dataframe(target_file):
-        logging.info("csv file is loading...")
+        print("csv file is loading...")
         try:
             data_df = pd.read_csv(target_file, encoding="utf8", engine="python", na_values='')
             # data_df.columns
@@ -280,7 +283,7 @@ class ContentsControl():
             # いらない列の削除
             drop_col = columns[36:]
             data_df = data_df.drop(drop_col, axis=1)
-            logging.info("csv file is converted to dataframe!")
+            print("csv file is converted to dataframe!")
             return data_df
         except ValueError:
             # 読み込めないということはカラムがおかしいということなので。
@@ -288,13 +291,13 @@ class ContentsControl():
             exit(1)
 
     def excel_file_insert_dataframe(target_file):
-        logging.info("excel file is loading...")
+        print("excel file is loading...")
         try:
             df = pd.read_excel(target_file, sheet_name='Sheet1')
             columns = df.columns
             drop_col = columns[36:]
             data_df = df.drop(drop_col, axis=1)
-            logging.info("excel file is converted to dataframe!")
+            print("excel file is converted to dataframe!")
             return data_df
         except ValueError:
             # 読み込めないということはカラムがおかしいということなので。
@@ -305,7 +308,7 @@ class ContentsControl():
             exit(1)
 
     def tsv_file_insert_dataframe(target_file):
-        logging.info("tsv file is loading...")
+        print("tsv file is loading...")
         header = ['No', '媒体名', '掲載開始日＝データ取得日', '事業内容', '職種','会社名(詳細ページの募集企業名)',
         '郵便番号', '都道府県', '住所1', '住所2', '住所3', 'TEL','担当部署', '担当者名', '上場市場','従業員数',
         '資本金', '売上高', '広告スペース', '大カテゴリ','小カテゴリ', '掲載案件数', '派遣', '紹介', 'フラグ数',
@@ -314,7 +317,7 @@ class ContentsControl():
         try:
             use_cols = range(0,36)
             data_df = pd.read_csv(target_file, sep='\t', names=header, usecols=use_cols, engine='python', encoding='utf-8')
-            logging.info("tsv file is converted to dataframe!")
+            print("tsv file is converted to dataframe!")
             return data_df
         except IndexError:
             # 読み込めないということはカラムがおかしいということなので。この後に処理を続けるのはクソだがこの処理でやってみる
@@ -344,7 +347,7 @@ class ContentsControl():
                         del d[use_default_column_num:]
                 data.insert(0, header)
                 contents = pd.DataFrame(data[1:], columns=data[0])
-                logging.info("tsv file is converted to dataframe!")
+                print("tsv file is converted to dataframe!")
 
                 return contents
 
