@@ -239,6 +239,17 @@ class PerlProcess():
         else:
             logging.error('inquired_file is not found')
 
+class FillBlanks():
+    # 市外局番ファイルをpickle化するための関数
+    def dataframe_to_pickle(filename):
+        with open(filename, 'wb') as f1:
+            pickle.dump(dataframe, f1)	#pickle.dump（データ、ファイル）
+
+    # 市外局番ファイルをpickle化したものを読み込む関数
+    def dataframe_read(filename):
+        dataframe = pd.io.parsers.read_csv(filename, float_precision = "high").values
+        return dataframe
+
 
 class ContentsControl():
     # contents:dataframe
@@ -372,6 +383,7 @@ class ContentsControl():
             company_name_error = contents[(contents[company_name_key].str.len() < 3)]
         if postal_code_key:
             postal_code_error = contents[(contents[postal_code_key].astype('str').str.len() < 7) | (contents[postal_code_key].astype('str').str.len() > 8)] # 郵便番号がない行
+            print(postal_code_error[postal_code_key])
             if prefecture_key:
                 postal_prefecture_error = postal_code_error[postal_code_error[prefecture_key].astype('str').str.len() <= 2] # 郵便番号も都道府県もない
         if address3_key:
