@@ -60,9 +60,12 @@ class PerlProcess():
         contentscontrol = ContentsControl
         length = len
         chdir = os.chdir
+        fillblanks = FillBlanks
+
         # 変数
         company_name_search = re.compile('会社名*')
         posting_start_date_search = re.compile('掲載開始日*')
+        areacode_file_name = 'areacode2.pkl'
         tel_key = 'TEL'
         postal_code_key = '郵便番号'
         prefecture_key = '都道府県'
@@ -111,17 +114,15 @@ class PerlProcess():
         # データ取得日の入力などを行う
         if target_files:
             for target_file in target_files:
+                # tsvとexcelファイルで処理を変更する
                 extention = os.path.splitext(target_file)[1]
                 logging.info(target_file)
                 if extention == excel_extention:
-                    contents = ContentsControl.excel_file_insert_dataframe(tsv_target_file) # excelファイルをデータフレームにする
-                elif extention:
+                    contents = ContentsControl.excel_file_insert_dataframe(target_file) # excelファイルをデータフレームにする
+                elif extention == tsv_extention:
                     contents = ContentsControl.tsv_file_insert_dataframe(target_file) # tsvファイルをデータフレームにする
                 else:
                     logging.error("this extention is not compatible! =>「{}」 ")
-
-                # なんでかNaNが残っている時があるので念のため。
-                contents = contents.fillna('')
 
                 # データフレームのヘッダーを取得
                 columns = contents.columns.tolist()
@@ -136,7 +137,11 @@ class PerlProcess():
                 # 全体の余計な記号などを削除する
                 contents = contentscontrol.contents_strip(columns, contents)
 
-                # 会社名のところにあるアスタリスク削除を行う。
+                # 電話番号による都道府県を補完処理
+                areacode_dataframe = fillblanks.pickle_to_dataframe(areacode_file_name)
+                contents = fillblanks.fill_prefecture_by_phone_number(areacode_dataframe, contents)
+
+                # 会社名のところにあるアスタリスクなどの削除を行う。
                 contents = contentscontrol.replace_company_contents(contents, company_name_key)
 
                 # 掲載開始日の週の月曜日を取得し、加工する
@@ -204,14 +209,27 @@ class FillBlanks():
                 chdir(os.path.dirname(os.path.abspath(__file__)))
 
             if os.path.exists(file_name):
-                pickle.dump(dataframe, f1)
+                dataframe.to_pickle(file_name)
             else:
                 logging.error("「{}」 is not found!".format(file_name))
 
     # 市外局番ファイルをpickle化したものを読み込む関数
     def pickle_to_dataframe(file_name):
-        dataframe = pd.io.parsers.read_csv(file_name, float_precision = "high").values
+        dataframe = pd.read_pickle(file_name)
+        dataframe = dataframe.dropna()
+        pd.options.display.precision = 4
+        dataframe['市外局番'] = dataframe['市外局番'].astype(int).astype(str).str.zfill(4)
         return dataframe
+
+    def fill_prefecture_by_phone_number(area_code_dataframe, fill_dataframe):
+        phone_number_key = 'TEL'
+        prefecture_key = '都道府県'
+
+        # 都道府県埋めが必要な県のみに行を絞る
+        dataframe = fill_dataframe[fill_dataframe[prefecture_key].isnull()]
+        print(dataframe)
+        # print(dataframe[phone_number_key])
+        exit(1)
 
 
 class ContentsControl():
@@ -311,6 +329,7 @@ class ContentsControl():
                 reader = csv.reader(f, delimiter='\t')
                 data = [x for x in reader]
                 save_index = []
+
                 for index, row in enumerate(data):
                     if length(row) < import_default_column_num:
                         if data[index+1][0] == '':
@@ -338,19 +357,31 @@ class ContentsControl():
     # contents:dataframe
     def error_detection(contents, tel_key=None, company_name_key=None, postal_code_key=None, address3_key=None, prefecture_key=None):
         get_phone_number = ContentsControl.get_tel
+
         if tel_key:
             contents[tel_key] = contents[tel_key].str.findall('\d{2,4}-\d{2,4}-\d{2,4}')
             contents[tel_key] = contents[tel_key].apply(get_phone_number)
             tel_error = contents[(contents[tel_key].astype('str').str.len() < 12) | (contents[tel_key].astype('str').str.len() > 13)] # 電話番号が不適切
+        else:
+            tel_error = contents
         if company_name_key:
             company_name_error = contents[(contents[company_name_key].str.len() < 3)]
+        else:
+            company_name_error = contents
         if postal_code_key:
             postal_code_error = contents[(contents[postal_code_key].astype('str').str.len() < 7) | (contents[postal_code_key].astype('str').str.len() > 8)] # 郵便番号がない行
             print(postal_code_error[postal_code_key])
             if prefecture_key:
                 postal_prefecture_error = postal_code_error[postal_code_error[prefecture_key].astype('str').str.len() <= 2] # 郵便番号も都道府県もない
+            else:
+                postal_prefecture_error = contents
+        else:
+            postal_code_error = contents
+            postal_prefecture_error = contents
         if address3_key:
             address3_error = contents.loc[contents[address3_key].astype('str').str.len() <= 3] # 住所がない
+        else:
+            address3_error = contents
 
         return tel_error, company_name_error, postal_code_error, postal_prefecture_error, address3_error
 
@@ -409,9 +440,10 @@ class FileControl():
 if __name__ == '__main__':
     # args = sys.argv
     media_name = 'フロムエー' # args[1] # 第一引数は処理を行うメディアの名前
-    # dataframe = ContentsControl.excel_file_insert_dataframe('areacode.xlsx')
+    # dataframe = ContentsControl.excel_file_insert_dataframe('error_test.xlsx')
 
     # 市外局番一覧を都道府県と結びつけるエクセルファイルをpickle化することで高速化を図る
-    # FillBlanks.dataframe_to_pickle('areacode.pkl', dataframe)
-
+    #FillBlanks.dataframe_to_pickle('areacode2.pkl', dataframe)
+    # areacode = FillBlanks.pickle_to_dataframe('areacode2.pkl')
+    # FillBlanks.fill_prefecture_by_phone_number(areacode, dataframe)
     target = PerlProcess.mdaCheckCnt(os.getcwd(), media_name)
