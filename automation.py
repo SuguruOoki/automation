@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import bz2, os, sys, glob, re, requests, json, datetime, shutil, csv, xlsxwriter, pandas as pd
+import bz2, os, sys, glob, re, requests, json, datetime, shutil, csv, xlsxwriter, pickle, pandas as pd
 from collections import Counter
 from collections import OrderedDict
 import logging,subprocess,time
@@ -90,6 +90,7 @@ class PerlProcess():
 
         target_files = FileControl.get_find_all_files_name(target_path, excel_extention)
         tsv_target_files = FileControl.get_find_all_files_name(target_path, tsv_extention)
+        target_files.extend(tsv_target_files)
         inquired_dataframe = PerlProcess.inquired_row_to_dataframe(inquired_path, media_name) # 問い合わせ済みのファイルを読み込む
         inquired_dataframe = inquired_dataframe.fillna('') # 残っているNaNを削除
 
@@ -105,8 +106,14 @@ class PerlProcess():
             # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
             # データ取得日の入力などを行う
             for target_file in target_files:
-                os.chdir(target_path)
-                contents = ContentsControl.excel_file_insert_dataframe(target_file) # excelファイルをデータフレームにする
+                extention = os.path.splitext(target_file)[1]
+                logging.info(target_file)
+                if extention == excel_extention:
+                    contents = ContentsControl.excel_file_insert_dataframe(tsv_target_file) # excelファイルをデータフレームにする
+                elif extention:
+                    contents = ContentsControl.tsv_file_insert_dataframe(target_file) # tsvファイルをデータフレームにする
+                else:
+                    logging.error("this extention is not compatible! =>「{}」 ")
 
                 # なんでかNaNが残っている時があるので念のため。
                 contents = contents.fillna('')
@@ -171,9 +178,6 @@ class PerlProcess():
             # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
             # データ取得日の入力などを行う
             for tsv_target_file in tsv_target_files:
-                os.chdir(target_path)
-                logging.info(tsv_target_file)
-                contents = ContentsControl.tsv_file_insert_dataframe(tsv_target_file) # excelファイルをデータフレームにする
 
                 # なんでかNaNが残っている時があるので念のため。
                 contents = contents.fillna('')
@@ -200,7 +204,7 @@ class PerlProcess():
 
                 if not posting == contents[posting_start_date_key].values[0]:
                     contents[posting_start_date_key] = posting
-                    logging.info("changed!")
+                    logging.info("posting date is changed!")
 
                 # エラーの検出処理
                 tel_error, company_name_error, postal_code_error, postal_prefecture_error, address3_error = contentscontrol.error_detection(contents, tel_key=tel_key, company_name_key=company_name_key, postal_code_key=postal_code_key, prefecture_key=prefecture_key, address3_key=address3_key)
@@ -241,13 +245,26 @@ class PerlProcess():
 
 class FillBlanks():
     # 市外局番ファイルをpickle化するための関数
-    def dataframe_to_pickle(filename):
-        with open(filename, 'wb') as f1:
-            pickle.dump(dataframe, f1)	#pickle.dump（データ、ファイル）
+    def dataframe_to_pickle(file_name, dataframe, file_path=None, save_path=None):
+        if file_path:
+            os.chdir(file_path)
+        else:
+            os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+        with open(file_name, 'wb') as f1:
+            if save_path:
+                os.chdir(save_path)
+            else:
+                os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+            if os.path.exists(file_name):
+                pickle.dump(dataframe, f1)
+            else:
+                logging.error("{} ")
 
     # 市外局番ファイルをpickle化したものを読み込む関数
-    def dataframe_read(filename):
-        dataframe = pd.io.parsers.read_csv(filename, float_precision = "high").values
+    def pickle_to_dataframe(file_name):
+        dataframe = pd.io.parsers.read_csv(file_name, float_precision = "high").values
         return dataframe
 
 
@@ -446,4 +463,9 @@ class FileControl():
 if __name__ == '__main__':
     # args = sys.argv
     media_name = 'フロムエー' # args[1] # 第一引数は処理を行うメディアの名前
+    # dataframe = ContentsControl.excel_file_insert_dataframe('areacode.xlsx')
+
+    # 市外局番一覧を都道府県と結びつけるエクセルファイルをpickle化することで高速化を図る
+    # FillBlanks.dataframe_to_pickle('areacode.pkl', dataframe)
+
     target = PerlProcess.mdaCheckCnt(os.getcwd(), media_name)
