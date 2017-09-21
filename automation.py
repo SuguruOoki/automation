@@ -88,8 +88,8 @@ class PerlProcess():
             subprocess.check_call(args)
         os.chdir(target_path)
 
-        target_files = FileControl.get_find_all_files_name(target_path, excel_extention)
-        tsv_target_files = FileControl.get_find_all_files_name(target_path, tsv_extention)
+        target_files = FileControl.get_find_all_files_name(target_path, excel_extention) # excelファイルのロード
+        tsv_target_files = FileControl.get_find_all_files_name(target_path, tsv_extention) # tsvファイルのロード
         target_files.extend(tsv_target_files)
         inquired_dataframe = PerlProcess.inquired_row_to_dataframe(inquired_path, media_name) # 問い合わせ済みのファイルを読み込む
         inquired_dataframe = inquired_dataframe.fillna('') # 残っているNaNを削除
@@ -101,10 +101,11 @@ class PerlProcess():
                                 address2_key: address2_key+'(修正後)', address2_key+'(修正前)':address2_key,
                                 address3_key: address3_key+'(修正後)', address3_key+'(修正前)':address3_key,
                                 })
+
+        # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
+        # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
+        # データ取得日の入力などを行う
         if target_files:
-            # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
-            # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
-            # データ取得日の入力などを行う
             for target_file in target_files:
                 extention = os.path.splitext(target_file)[1]
                 logging.info(target_file)
@@ -121,23 +122,22 @@ class PerlProcess():
                 # データフレームのヘッダーを取得
                 columns = contents.columns.tolist()
 
-                # 会社と掲載開始日についてはkeyがブレるので正規表現でヘッダーを検索する
+                # ヘッダーの検索 => 会社と掲載開始日についてはkeyがブレるので正規表現でヘッダーを検索する
                 company_name_key = [x for x in columns if company_name_search.match(x)][0]
                 posting_start_date_key = [x for x in columns if posting_start_date_search.match(x)][0]
 
                 # 問い合わせ済み企業の行を削除
                 contents = pd.concat([contents, inquired_dataframe]).drop_duplicates(subset=[prefecture_key, address1_key, address2_key, address3_key], keep=False)
 
-                # 掲載開始日の週の月曜日を取得し、加工する
-                posting = ContentsControl.getDateMonday(contents[posting_start_date_key].values[0])
-                output_name_date = posting.replace('/', '')
-
-                # 余計な記号などを削除する
+                # 全体の余計な記号などを削除する
                 contents = contentscontrol.contents_strip(columns, contents)
 
                 # 会社名のところにあるアスタリスク削除を行う。
                 contents = contentscontrol.replace_company_contents(contents, company_name_key)
 
+                # 掲載開始日の週の月曜日を取得し、加工する
+                posting = ContentsControl.getDateMonday(contents[posting_start_date_key].values[0])
+                output_name_date = posting.replace('/', '')
                 if not posting == contents[posting_start_date_key].values[0]:
                     contents[posting_start_date_key] = posting
                     logging.info("changed!")
@@ -173,66 +173,6 @@ class PerlProcess():
             logging.info('target files is not found in edited folder!')
             exit(1)
 
-        if tsv_target_files:
-            # tsv_target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
-            # ここでは読み込んだレコードから改行コードと先頭末尾のダブルクォーテーションの削除,
-            # データ取得日の入力などを行う
-            for tsv_target_file in tsv_target_files:
-
-                # なんでかNaNが残っている時があるので念のため。
-                contents = contents.fillna('')
-
-                # データフレームのヘッダーを取得
-                columns = contents.columns.tolist()
-
-                # 会社と掲載開始日についてはkeyがブレるので正規表現でヘッダーを検索する
-                company_name_key = [x for x in columns if company_name_search.match(x)][0]
-                posting_start_date_key = [x for x in columns if posting_start_date_search.match(x)][0]
-
-                # 問い合わせ済み企業の行を削除
-                contents = pd.concat([contents, inquired_dataframe]).drop_duplicates(subset=[prefecture_key, address1_key, address2_key, address3_key], keep=False)
-
-                # 掲載開始日の週の月曜日を取得し、加工する
-                posting = ContentsControl.getDateMonday(contents[posting_start_date_key].values[0])
-                output_name_date = posting.replace('/', '')
-
-                # 余計な記号などを削除する
-                contents = contentscontrol.contents_strip(columns, contents)
-
-                # 会社名のところにあるアスタリスク削除を行う。
-                contents = contentscontrol.replace_company_contents(contents, company_name_key)
-
-                if not posting == contents[posting_start_date_key].values[0]:
-                    contents[posting_start_date_key] = posting
-                    logging.info("posting date is changed!")
-
-                # エラーの検出処理
-                tel_error, company_name_error, postal_code_error, postal_prefecture_error, address3_error = contentscontrol.error_detection(contents, tel_key=tel_key, company_name_key=company_name_key, postal_code_key=postal_code_key, prefecture_key=prefecture_key, address3_key=address3_key)
-
-                # 掲載開始日の修正
-                # いらない行を削ぎ落として問い合わせを行う行のみを抽出する
-                drop_index = list(set(postal_code_error.index.tolist() + address3_error.index.tolist() + tel_error.index.tolist()))
-                right_contents = contents.drop(drop_index)
-                contents_length = len(right_contents)
-
-                # 正常行とエラー行をそれぞれexcel出力する
-                output_name = tsv_target_file.split(".")[0]
-                os.chdir(output_path)
-                output_excel(output_name+'_'+str(contents_length)+'_'+output_name_date+'_'+output_name_date, right_contents)
-                os.chdir(error_path)
-                if len(company_name_error) > 0:
-                    output_excel(output_name+'_company_name_error', company_name_error)
-                if len(address3_error) > 0:
-                    output_excel(output_name+'_address3_error', address3_error)
-                if len(postal_code_error) > 0:
-                    output_excel(output_name+'_postal_code_error', postal_code_error)
-                if len(tel_error) > 0:
-                    output_excel(output_name+'_tel_error', tel_error)
-                if len(postal_prefecture_error) > 0:
-                    output_excel(output_name+'_postal_prefecture_error', postal_prefecture_error)
-        else:
-            logging.info('excel target files is not found in edited folder!')
-
     def inquired_row_to_dataframe(target_directory, media_name):
         inquired_file_search_name = '*' + media_name + '*.*'
         inquired_file = glob.glob(target_directory+'/'+inquired_file_search_name)
@@ -242,6 +182,7 @@ class PerlProcess():
             return contents
         else:
             logging.error('inquired_file is not found')
+
 
 class FillBlanks():
     # 市外局番ファイルをpickle化するための関数
