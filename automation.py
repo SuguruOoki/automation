@@ -446,6 +446,21 @@ class FileControl():
                     return_files.append(file)
         return return_files
 
+    # モチベンチュアからダウンロードしてくるcsvファイルは中身はtsvファイルとなっている
+    # そのため、extentionの変換が必要となるのでそれを行う。
+    # target_filesはフルパス
+    def fix_extention(target_files):
+        return_files = []
+        for target_file in target_files:
+            if not target_extention == '': # target_extentionが空ではない時
+                root, ext = os.path.splitext(file)
+                if ext == csv_extention:
+                    print(root)
+                    print(ext)
+                    print(ext is csv_extention)
+                    return_files.append(target_file)
+        return return_files
+
 
 if __name__ == '__main__':
     # args = sys.argv
