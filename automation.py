@@ -5,12 +5,10 @@ from collections import Counter
 from collections import OrderedDict
 import logging,subprocess,time
 import numpy as np
-global file_extention
 global excel_extention
 global csv_extention
 import xlrd
 
-file_extention = '.txt'
 excel_extention = '.xlsx'
 csv_extention = '.csv'
 tsv_extention = '.tsv'
@@ -93,13 +91,17 @@ class PerlProcess():
         if not os.path.exists(error_path):
             args = ['mkdir', 'error']
             subprocess.check_call(args)
-        chdir(target_path)
-
+        os.chdir(target_path)
+        print(os.getcwd())
         target_files = FileControl.get_find_all_files_name(target_path, excel_extention) # excelファイルのロード
         tsv_target_files = FileControl.get_find_all_files_name(target_path, tsv_extention) # tsvファイルのロード
-        target_files.extend(tsv_target_files)
+        target_files = target_files + tsv_target_files
+        print(target_files)
+        # target_files.extend(tsv_target_files)
         inquired_dataframe = PerlProcess.inquired_row_to_dataframe(inquired_path, media_name) # 問い合わせ済みのファイルを読み込む
         inquired_dataframe = inquired_dataframe.fillna('') # 残っているNaNを削除
+
+        exit(1)
 
         # 後の処理でinquired_dataframeの列名とファイルから読み込んだdataframeの列名が同じものを比べて
         # 問い合わせ済みの企業の情報を削除したいのでinquired_dataframe側の列名を変更しておく
@@ -138,6 +140,7 @@ class PerlProcess():
                 contents = contentscontrol.contents_strip(columns, contents)
 
                 # 電話番号による都道府県を補完処理
+                print(target_file)
                 chdir(target_directory)
                 areacode_dataframe = fillblanks.pickle_to_dataframe(areacode_file_name)
                 chdir(target_path)
@@ -215,7 +218,7 @@ class FillBlanks():
             else:
                 logging.error("「{}」 is not found!".format(file_name))
 
-    # 市外局番ファイルをpickle化したものを読み込む関数
+    # 市外局番一覧ファイルをpickle化したものを読み込む関数
     def pickle_to_dataframe(file_name):
         dataframe = pd.read_pickle(file_name)
         dataframe = dataframe.dropna()
@@ -223,15 +226,16 @@ class FillBlanks():
         dataframe['市外局番'] = dataframe['市外局番'].astype(int).astype(str).str.zfill(4)
         return dataframe
 
+    # 電話番号の市外局番で埋める処理を入れる
     def fill_prefecture_by_phone_number(area_code_dataframe, fill_dataframe):
         print("fix the prefecture errors by area code...")
         phone_number_key = 'TEL'
         prefecture_key = '都道府県'
 
         # 都道府県埋めが必要な県のみに行を絞る
-        dataframe = fill_dataframe[(fill_dataframe[prefecture_key] == '') or (fill_dataframe[prefecture_key].str.isnull())]
-        print(dataframe[prefecture_key])
-        print(dataframe[phone_number_key])
+        # dataframe = fill_dataframe[(fill_dataframe[prefecture_key] == '') or (fill_dataframe[prefecture_key].str.isnull())]
+        dataframe = fill_dataframe[fill_dataframe[prefecture_key] == ''].values
+        data = fill_dataframe[fill_dataframe[prefecture_key].isnull()]
         exit(1)
 
 
@@ -298,6 +302,7 @@ class ContentsControl():
             drop_col = columns[36:]
             data_df = df.drop(drop_col, axis=1)
             print("excel file is converted to dataframe!")
+            print(data_df)
             return data_df
         except ValueError:
             # 読み込めないということはカラムがおかしいということなので。
@@ -426,18 +431,20 @@ class OutputExcel():
 
 
 class FileControl():
+    # ターゲットディレクトリに入っているファイル名を全て取ってくる関数
+    # target_directory: フルパス, target_extention: extentionを指定する。基本はglobal変数のものを使用
     def get_find_all_files_name(target_directory, target_extention):
         files = os.listdir(target_directory)
         return_files = []
         for file in files:
             if not target_extention == '': # target_extentionが空ではない時
                 root, ext = os.path.splitext(file)
-                if ext == target_extention: # target_extentionが一致した時
+                print(root)
+                print(ext)
+                print(ext is target_extention)
+                if ext is target_extention: # target_extentionが一致した時
                     return_files.append(file)
-        if len(return_files) <= 0:
-            return files
-        else:
-            return return_files
+        return return_files
 
 
 if __name__ == '__main__':
