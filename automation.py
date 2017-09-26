@@ -101,8 +101,6 @@ class PerlProcess():
         inquired_dataframe = PerlProcess.inquired_row_to_dataframe(inquired_path, media_name) # 問い合わせ済みのファイルを読み込む
         inquired_dataframe = inquired_dataframe.fillna('') # 残っているNaNを削除
 
-        exit(1)
-
         # 後の処理でinquired_dataframeの列名とファイルから読み込んだdataframeの列名が同じものを比べて
         # 問い合わせ済みの企業の情報を削除したいのでinquired_dataframe側の列名を変更しておく
         inquired_dataframe = inquired_dataframe.rename(columns={prefecture_key: prefecture_key+'(修正後)', prefecture_key+'(修正前)':prefecture_key,
@@ -171,22 +169,24 @@ class PerlProcess():
                 chdir(inquired_path)
                 output_excel(media_name, updated_inquired_dataframe) # 問い合わせファイルをアップデートする。
                 chdir(output_path)
-                output_excel(output_name+'_'+str(contents_length)+'_'+output_name_date+'_'+output_name_date, right_contents)
+                output_excel(output_name + '_' + str(contents_length) + '_' + output_name_date + '_' + output_name_date, right_contents)
                 chdir(error_path)
                 if length(company_name_error) > 0:
-                    output_excel(output_name+'_company_name_error', company_name_error)
+                    output_excel(output_name + '_company_name_error', company_name_error)
                 if length(address3_error) > 0:
-                    output_excel(output_name+'_address3_error', address3_error)
+                    output_excel(output_name + '_address3_error', address3_error)
                 if length(postal_code_error) > 0:
-                    output_excel(output_name+'_postal_code_error', postal_code_error)
+                    output_excel(output_name + '_postal_code_error', postal_code_error)
                 if length(tel_error) > 0:
-                    output_excel(output_name+'_tel_error', tel_error)
+                    output_excel(output_name + '_tel_error', tel_error)
                 if length(postal_prefecture_error) > 0:
-                    output_excel(output_name+'_postal_prefecture_error', postal_prefecture_error)
+                    output_excel(output_name + '_postal_prefecture_error', postal_prefecture_error)
         else:
             print('target files is not found in edited folder!')
             exit(1)
 
+    # メディアの名前から問い合わせ済み会社の一覧ファイルを探し出す関数
+    # 一覧ファイルが複数あった場合には対応していないので場合によってはいらないかも。
     def inquired_row_to_dataframe(target_directory, media_name):
         inquired_file_search_name = '*' + media_name + '*.*'
         inquired_file = glob.glob(target_directory+'/'+inquired_file_search_name)
@@ -277,7 +277,7 @@ class ContentsControl():
             return mondaydate.strftime("%Y%m%d")
 
     # target_file(csv)の内容をarrayにinsert
-    # 現在は使う予定なし。
+    # 現在は使う予定なしかも。
     def csv_file_insert_dataframe(target_file):
         print("csv file is loading...")
         try:
@@ -294,6 +294,7 @@ class ContentsControl():
             logging.error("csv file : Columns Mistake error")
             exit(1)
 
+    # エクセルファイルをデータフレームにするための関数
     def excel_file_insert_dataframe(target_file):
         print("excel file is loading...")
         try:
@@ -312,6 +313,7 @@ class ContentsControl():
             logging.error("excel file : XLRDError")
             exit(1)
 
+    # tsvファイルをデータフレームに変換するために使う関数
     def tsv_file_insert_dataframe(target_file):
         print("tsv file is loading...")
         header = ['No', '媒体名', '掲載開始日＝データ取得日', '事業内容', '職種','会社名(詳細ページの募集企業名)',
@@ -356,13 +358,14 @@ class ContentsControl():
 
                 return contents
 
+    # TELカラムの余計な文字を取り去るために使っている関数
     def get_tel(tel_list):
         if len(tel_list) == 0:
             return None
         else:
             return tel_list[0]
 
-    # contents:dataframe
+    # contents:dataframe, その他の引数はは文字列
     def error_detection(contents, tel_key=None, company_name_key=None, postal_code_key=None, address3_key=None, prefecture_key=None):
         get_phone_number = ContentsControl.get_tel
 
@@ -402,6 +405,8 @@ class OutputExcel():
         writer.save()
         writer.close()
 
+    # 正しい行のみを取り出したデータフレームを使って問い合わせ済みのデータフレームと
+    # 照らし合わせ、問い合わせ済みであれば、その行を削除する関数
     def add_row_inquired_dataframe(right_dataframe, inquired_dataframe):
         prefecture_before_key = '都道府県(修正前)'
         address1_before_key = '住所1(修正前)'
@@ -452,6 +457,7 @@ class FileControl():
     # 使うのはモチベンチュアから落として来たファイルのみ。
     # 他で使うと動的エラーになるので使用しない。
     def fix_extention(target_files):
+        print(target_files)
         for target_file in target_files:
             if not target_extention == '': # target_extentionが空ではない時
                 root, ext = os.path.splitext(file)
@@ -459,6 +465,7 @@ class FileControl():
                     print(root)
                     print(ext)
                     os.rename(target_file, root + tsv_extention)
+        print(target_files)
         return target_files
 
 
@@ -468,7 +475,13 @@ if __name__ == '__main__':
     # dataframe = ContentsControl.excel_file_insert_dataframe('error_test.xlsx')
 
     # 市外局番一覧を都道府県と結びつけるエクセルファイルをpickle化することで高速化を図る
+    # 使う時にだけコメントを外すこと
     #FillBlanks.dataframe_to_pickle('areacode2.pkl', dataframe)
+
+    # dataframe_to_pickleで保存したpickleファイルを使って郵便番号による都道府県カラムの
+    # 補完を行うためのデータフレームを展開する
     # areacode = FillBlanks.pickle_to_dataframe('areacode2.pkl')
+
+    # pickle_to_dataframeで展開したデータフレームを使用して都道府県を補完する
     # FillBlanks.fill_prefecture_by_phone_number(areacode, dataframe)
     target = PerlProcess.mdaCheckCnt(os.getcwd(), media_name)
