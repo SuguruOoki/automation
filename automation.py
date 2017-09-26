@@ -37,6 +37,7 @@ class PerlProcess():
             logging.error('Not Found {}'.format(log_file))
 
     # ファイルネームの中に特定の記号が入っていた場合の置き換えを行う関数
+    # この関数は以前使われていたperlのプログラムにあったため一応実装したが、現在(20170918)は使われていない。
     def renProcess(target_directory):
         pattern = re.compile(u'[ \[\]\(\)\{\}]')
         try:
@@ -52,6 +53,7 @@ class PerlProcess():
             logging.error('value error')
 
     # target_directoryはフルパスでの指定
+    # media_name例：フロムエー
     def mdaCheckCnt(target_directory, media_name):
         # 高速化のためになんども使う関数に関して変数に保存しておく
         output_excel = OutputExcel.dataframe_output
@@ -80,10 +82,10 @@ class PerlProcess():
         # media_path => メディア毎の問い合わせ済みのファイルを格納しておく
         print(target_directory)
         chdir(target_directory)
-        target_path = target_directory+'/'+'test'
-        output_path = target_directory+'/'+'edited'
-        error_path = target_directory+'/'+'error'
-        inquired_path = target_directory+'/'+'inquired'
+        target_path = target_directory + '/' + 'test'
+        output_path = target_directory + '/' + 'edited'
+        error_path = target_directory + '/' + 'error'
+        inquired_path = target_directory + '/' + 'inquired'
 
         if not os.path.exists(output_path):
             args = ['mkdir', 'edited']
@@ -93,20 +95,22 @@ class PerlProcess():
             subprocess.check_call(args)
         os.chdir(target_path)
         print(os.getcwd())
-        target_files = FileControl.get_find_all_files_name(target_path, excel_extention) # excelファイルのロード
-        tsv_target_files = FileControl.get_find_all_files_name(target_path, tsv_extention) # tsvファイルのロード
+
+        # ターゲットファイルの読み込みを行う。
+        target_files = FileControl.get_find_all_files_name(target_path, excel_extention) # excelファイルの読み込み
+        tsv_target_files = FileControl.get_find_all_files_name(target_path, tsv_extention) # tsvファイルの読み込み
         target_files = target_files + tsv_target_files
         print(target_files)
-        # target_files.extend(tsv_target_files)
+
         inquired_dataframe = PerlProcess.inquired_row_to_dataframe(inquired_path, media_name) # 問い合わせ済みのファイルを読み込む
         inquired_dataframe = inquired_dataframe.fillna('') # 残っているNaNを削除
 
         # 後の処理でinquired_dataframeの列名とファイルから読み込んだdataframeの列名が同じものを比べて
         # 問い合わせ済みの企業の情報を削除したいのでinquired_dataframe側の列名を変更しておく
-        inquired_dataframe = inquired_dataframe.rename(columns={prefecture_key: prefecture_key+'(修正後)', prefecture_key+'(修正前)':prefecture_key,
-                                address1_key: address1_key+'(修正後)', address1_key+'(修正前)':address1_key,
-                                address2_key: address2_key+'(修正後)', address2_key+'(修正前)':address2_key,
-                                address3_key: address3_key+'(修正後)', address3_key+'(修正前)':address3_key,
+        inquired_dataframe = inquired_dataframe.rename(columns={prefecture_key: prefecture_key + '(修正後)', prefecture_key + '(修正前)':prefecture_key,
+                                address1_key: address1_key + '(修正後)', address1_key + '(修正前)':address1_key,
+                                address2_key: address2_key + '(修正後)', address2_key + '(修正前)':address2_key,
+                                address3_key: address3_key + '(修正後)', address3_key + '(修正前)':address3_key,
                                 })
 
         # target_filesのファイルを読み込み、配列に入れてerrorを確認して修正する。
@@ -138,17 +142,17 @@ class PerlProcess():
                 contents = contentscontrol.contents_strip(columns, contents)
 
                 # 電話番号による都道府県を補完処理
-                print(target_file)
-                chdir(target_directory)
-                areacode_dataframe = fillblanks.pickle_to_dataframe(areacode_file_name)
-                chdir(target_path)
-                contents = fillblanks.fill_prefecture_by_phone_number(areacode_dataframe, contents)
+                # print(target_file)
+                # chdir(target_directory)
+                # areacode_dataframe = fillblanks.pickle_to_dataframe(areacode_file_name)
+                # chdir(target_path)
+                # contents = fillblanks.fill_prefecture_by_phone_number(areacode_dataframe, contents)
 
                 # 会社名のところにあるアスタリスクなどの削除を行う。
                 contents = contentscontrol.replace_company_contents(contents, company_name_key)
 
                 # 掲載開始日の週の月曜日を取得し、加工する
-                posting = ContentsControl.getDateMonday(contents[posting_start_date_key].values[0])
+                posting = ContentsControl.get_date_monday(contents[posting_start_date_key].values[0])
                 output_name_date = posting.replace('/', '')
                 if not posting == contents[posting_start_date_key].values[0]:
                     contents[posting_start_date_key] = posting
@@ -182,7 +186,7 @@ class PerlProcess():
                 if length(postal_prefecture_error) > 0:
                     output_excel(output_name + '_postal_prefecture_error', postal_prefecture_error)
         else:
-            print('target files is not found in edited folder!')
+            print('target files is not found in {}!'.format(target_path))
             exit(1)
 
     # メディアの名前から問い合わせ済み会社の一覧ファイルを探し出す関数
@@ -195,7 +199,7 @@ class PerlProcess():
             contents = ContentsControl.excel_file_insert_dataframe(inquired_file[0])
             return contents
         else:
-            logging.error('inquired_file is not found')
+            logging.error('inquired_file is not found in {}'.format(inquired_path))
 
 
 class FillBlanks():
@@ -265,7 +269,7 @@ class ContentsControl():
 
     # 取ってきた日付の内容が条件に合わない場合その週の月曜日の日付を取得する
     # date:str
-    def getDateMonday(date):
+    def get_date_monday(date):
         # date = datetime.date.today()
         get_date = datetime.datetime.strptime(date, "%Y/%m/%d")
         day = get_date.weekday()
@@ -342,11 +346,11 @@ class ContentsControl():
 
                 for index, row in enumerate(data):
                     if length(row) < import_default_column_num:
-                        if data[index+1][0] == '':
+                        if data[index + 1][0] == '':
                             del data[index + 1][0]
-                        row.extend(data[index+1])
+                        row.extend(data[index + 1])
                         # save_index.append(index+1)
-                        del data[index+1]
+                        del data[index + 1]
 
                 # 使うのは37列だけなのでそれ以降の列は削除する
                 for index, d in enumerate(data):
@@ -391,6 +395,7 @@ class ContentsControl():
             postal_prefecture_error = contents
         if address3_key:
             address3_error = contents.loc[contents[address3_key].astype('str').str.len() <= 3] # 住所がない
+            print(address3_error)
         else:
             address3_error = contents
 
@@ -446,7 +451,6 @@ class FileControl():
                 root, ext = os.path.splitext(file)
                 print(root)
                 print(ext)
-                print(ext is target_extention)
                 if ext is target_extention: # target_extentionが一致した時
                     return_files.append(file)
         return return_files
@@ -471,7 +475,7 @@ class FileControl():
 
 if __name__ == '__main__':
     # args = sys.argv
-    media_name = 'フロムエー' # args[1] # 第一引数は処理を行うメディアの名前
+    media_name = 'フロムエー' # args[1] # 第一引数は処理を行うメディアの名前にする予定。
     # dataframe = ContentsControl.excel_file_insert_dataframe('error_test.xlsx')
 
     # 市外局番一覧を都道府県と結びつけるエクセルファイルをpickle化することで高速化を図る
